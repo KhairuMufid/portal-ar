@@ -206,7 +206,19 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                 ),
               ),
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 12),
+            
+            // Logo
+            Container(
+              alignment: Alignment.centerLeft,
+              child: Image.asset(
+                'assets/images/kooka-logo.png',
+                height: 28,
+                fit: BoxFit.contain,
+              ),
+            ),
+            const SizedBox(height: 12),
+            
             Text(
               'Jelajahi dunia Augmented Reality yang menakjubkan!',
               style: GoogleFonts.nunito(
