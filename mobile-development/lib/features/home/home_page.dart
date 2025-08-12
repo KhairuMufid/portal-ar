@@ -207,7 +207,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
               ),
             ),
             const SizedBox(height: 12),
-            
+
             // Logo
             Container(
               alignment: Alignment.centerLeft,
@@ -218,7 +218,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
               ),
             ),
             const SizedBox(height: 12),
-            
+
             Text(
               'Jelajahi dunia Augmented Reality yang menakjubkan!',
               style: GoogleFonts.nunito(
