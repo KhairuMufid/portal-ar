@@ -23,21 +23,27 @@ class _ARDetailPageState extends State<ARDetailPage>
   late AnimationController _heroController;
   late AnimationController _contentController;
   late AnimationController _panelController;
+  late AnimationController _backButtonController;
   late Animation<double> _heroAnimation;
   late Animation<double> _contentAnimation;
   late Animation<Offset> _panelSlideAnimation;
   late Animation<double> _panelFadeAnimation;
+  late Animation<double> _backButtonOpacity;
 
   PageController _imageController = PageController();
   int _currentImageIndex = 0;
   ScrollController _scrollController = ScrollController();
 
+  // BARU: State untuk visibility tombol back berdasarkan background visibility
+  bool _showBackButton = true;
+
+  // KONSTANTA: Threshold untuk menentukan kapan background terlihat
+  late double _backgroundVisibilityThreshold;
+
   // Konstanta untuk konsistensi padding
   static const double _horizontalPadding = 24.0;
-  // STABILITAS: Fixed height untuk carousel mencegah layout naik-turun
   static const double _carouselFixedHeight = 300.0;
-  static const double _carouselImageHeight =
-      260.0; // Tinggi gambar di dalam carousel
+  static const double _carouselImageHeight = 260.0;
 
   // Sample images for carousel
   final List<String> _carouselImages = [
@@ -66,6 +72,11 @@ class _ARDetailPageState extends State<ARDetailPage>
       vsync: this,
     );
 
+    _backButtonController = AnimationController(
+      duration: const Duration(milliseconds: 300),
+      vsync: this,
+    );
+
     _heroAnimation = CurvedAnimation(
       parent: _heroController,
       curve: Curves.easeOutBack,
@@ -88,8 +99,17 @@ class _ARDetailPageState extends State<ARDetailPage>
       curve: Curves.easeOut,
     );
 
+    _backButtonOpacity = CurvedAnimation(
+      parent: _backButtonController,
+      curve: Curves.easeInOut,
+    );
+
+    // BARU: Listener untuk background visibility
+    _scrollController.addListener(_handleScrollForBackgroundVisibility);
+
     // Start animations
     _heroController.forward();
+    _backButtonController.forward(); // Start dengan tombol visible
     Future.delayed(const Duration(milliseconds: 300), () {
       if (mounted) {
         _contentController.forward();
@@ -103,10 +123,50 @@ class _ARDetailPageState extends State<ARDetailPage>
   }
 
   @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // HITUNG: Threshold berdasarkan ukuran layar
+    // Background terlihat ketika scroll offset < 40% dari tinggi layar
+    _backgroundVisibilityThreshold = MediaQuery.of(context).size.height * 0.25;
+  }
+
+  // BARU: Handler untuk mengontrol tombol back berdasarkan visibility background
+  void _handleScrollForBackgroundVisibility() {
+    final double currentOffset = _scrollController.offset;
+
+    // LOGIKA BARU:
+    // - Background TERLIHAT (scroll offset kecil) -> SHOW button
+    // - Background TIDAK TERLIHAT (panel mengisi layar) -> HIDE button
+
+    if (currentOffset <= _backgroundVisibilityThreshold && !_showBackButton) {
+      // Background AR terlihat -> Show tombol back
+      setState(() {
+        _showBackButton = true;
+      });
+      _backButtonController.forward();
+      debugPrint(
+        'Back button shown - AR background visible (offset: ${currentOffset.toStringAsFixed(1)})',
+      );
+    } else if (currentOffset > _backgroundVisibilityThreshold &&
+        _showBackButton) {
+      // Panel konten mengisi layar -> Hide tombol back
+      setState(() {
+        _showBackButton = false;
+      });
+      _backButtonController.reverse();
+      debugPrint(
+        'Back button hidden - content panel covers screen (offset: ${currentOffset.toStringAsFixed(1)})',
+      );
+    }
+  }
+
+  @override
   void dispose() {
+    _scrollController.removeListener(_handleScrollForBackgroundVisibility);
     _heroController.dispose();
     _contentController.dispose();
     _panelController.dispose();
+    _backButtonController.dispose();
     _imageController.dispose();
     _scrollController.dispose();
     super.dispose();
@@ -125,11 +185,14 @@ class _ARDetailPageState extends State<ARDetailPage>
 
           return Stack(
             children: [
-              // LAPISAN BELAKANG: Latar Belakang AR + Tombol Kembali (DIAM/ABSOLUT)
+              // LAPISAN BELAKANG: Latar Belakang AR
               _buildBackgroundLayer(context, content),
 
-              // LAPISAN DEPAN: Panel Konten Putih (BISA DI-SCROLL)
+              // LAPISAN DEPAN: Panel Konten Putih (SCROLLABLE)
               _buildScrollableContentLayer(context, content),
+
+              // LAPISAN ATAS: Tombol kembali dengan animasi berdasarkan background visibility
+              _buildAnimatedBackButton(context),
             ],
           );
         },
@@ -137,24 +200,45 @@ class _ARDetailPageState extends State<ARDetailPage>
     );
   }
 
-  // LAPISAN BELAKANG: AR Background + Tombol Kembali Absolut
+  // LAPISAN BELAKANG: AR Background (tanpa tombol back)
   Widget _buildBackgroundLayer(BuildContext context, ARContent content) {
-    return Positioned.fill(
-      child: Stack(
-        children: [
-          // Full-screen AR preview background
-          _buildFullScreenARPreview(content),
+    return Positioned.fill(child: _buildFullScreenARPreview(content));
+  }
 
-          // ABSOLUT: Tombol Kembali yang menempel pada latar AR (TIDAK BERGERAK)
-          Positioned(
-            top: MediaQuery.of(context).padding.top + 20,
-            left: 20,
+  // LAPISAN DEPAN: Scrollable Content Layer
+  Widget _buildScrollableContentLayer(BuildContext context, ARContent content) {
+    return CustomScrollView(
+      controller: _scrollController,
+      physics: const ClampingScrollPhysics(),
+      slivers: [
+        // SPACER: Area untuk background AR (45% tinggi layar)
+        SliverToBoxAdapter(
+          child: SizedBox(height: MediaQuery.of(context).size.height * 0.45),
+        ),
+
+        // PANEL KONTEN: Mulai dari 45% tinggi layar
+        SliverToBoxAdapter(child: _buildMainContentPanel(context, content)),
+      ],
+    );
+  }
+
+  // TOMBOL BACK: Dengan animasi berdasarkan background visibility
+  Widget _buildAnimatedBackButton(BuildContext context) {
+    return Positioned(
+      top: MediaQuery.of(context).padding.top + 20,
+      left: 20,
+      child: FadeTransition(
+        opacity: _backButtonOpacity,
+        child: ScaleTransition(
+          scale: _backButtonOpacity,
+          child: Material(
+            color: Colors.transparent,
             child: Container(
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(28),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.15),
+                    color: Colors.black.withOpacity(0.2),
                     blurRadius: 12,
                     offset: const Offset(0, 4),
                   ),
@@ -163,7 +247,9 @@ class _ARDetailPageState extends State<ARDetailPage>
               child: _NeomorphicButton(
                 size: 56,
                 onPressed: () {
-                  debugPrint('Back button pressed - Absolute position');
+                  debugPrint(
+                    'Back button pressed - Background visibility based',
+                  );
                   Navigator.pop(context);
                 },
                 child: const Icon(
@@ -174,25 +260,8 @@ class _ARDetailPageState extends State<ARDetailPage>
               ),
             ),
           ),
-        ],
-      ),
-    );
-  }
-
-  // LAPISAN DEPAN: Scrollable Content Layer
-  Widget _buildScrollableContentLayer(BuildContext context, ARContent content) {
-    return CustomScrollView(
-      controller: _scrollController,
-      physics: const ClampingScrollPhysics(), // Mencegah overscroll/bounce
-      slivers: [
-        // Spacer untuk memberikan ruang pada latar AR
-        SliverToBoxAdapter(
-          child: SizedBox(height: MediaQuery.of(context).size.height * 0.45),
         ),
-
-        // Panel konten utama dengan alignment yang presisi
-        SliverToBoxAdapter(child: _buildMainContentPanel(context, content)),
-      ],
+      ),
     );
   }
 
@@ -383,27 +452,27 @@ class _ARDetailPageState extends State<ARDetailPage>
                 ),
               ),
 
-              // 1. Judul Game & Kategori (padding konsisten)
+              // A. BARU: Header Aplikasi dengan Ikon + Judul & Kategori
               Padding(
                 padding: const EdgeInsets.symmetric(
                   horizontal: _horizontalPadding,
                 ),
-                child: _buildTitleAndCategory(context, content),
+                child: _buildAppHeaderWithIcon(context, content),
               ),
 
               const SizedBox(height: 40),
 
-              // 2. STABILITAS: Seksi Galeri dengan fixed height
+              // B. STABILITAS: Seksi Galeri dengan fixed height
               _buildStableGallerySection(),
 
               const SizedBox(height: 40),
 
-              // 3. Seksi Deskripsi dengan alignment presisi
+              // C. Seksi Deskripsi dengan alignment presisi
               _buildAboutSection(context, content),
 
               const SizedBox(height: 48),
 
-              // 4. Tombol Aksi dengan padding konsisten
+              // D. Tombol Aksi dengan padding konsisten
               Padding(
                 padding: const EdgeInsets.symmetric(
                   horizontal: _horizontalPadding,
@@ -419,43 +488,89 @@ class _ARDetailPageState extends State<ARDetailPage>
     );
   }
 
-  Widget _buildTitleAndCategory(BuildContext context, ARContent content) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+  // A. BARU: Header Aplikasi dengan Ikon + Judul & Kategori
+  Widget _buildAppHeaderWithIcon(BuildContext context, ARContent content) {
+    return Row(
       children: [
-        // Game Title
-        Text(
-          content.title,
-          style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-            color: AppColors.textPrimary,
-            fontWeight: FontWeight.bold,
-            fontSize: 32,
+        // Ikon Aplikasi di sisi kiri
+        Container(
+          width: 80,
+          height: 80,
+          decoration: BoxDecoration(
+            color: Colors.grey.shade100,
+            borderRadius: BorderRadius.circular(20),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.grey.shade400,
+                offset: const Offset(4, 4),
+                blurRadius: 8,
+                spreadRadius: 0,
+              ),
+              BoxShadow(
+                color: Colors.white,
+                offset: const Offset(-4, -4),
+                blurRadius: 8,
+                spreadRadius: 0,
+              ),
+            ],
+          ),
+          child: Center(
+            child: Icon(
+              _getIconForContent(content.title),
+              size: 40,
+              color: AppColors.primary,
+            ),
           ),
         ),
 
-        const SizedBox(height: 12),
+        const SizedBox(width: 20), // Spasi antara ikon dan teks
+        // Blok Teks (Judul & Kategori) dengan alignment vertikal di tengah
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisAlignment: MainAxisAlignment.center, // Alignment vertikal
+            children: [
+              // Judul Game
+              Text(
+                content.title,
+                style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                  color: AppColors.textPrimary,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 28, // Sedikit diperkecil karena ada ikon
+                ),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
 
-        // Game Category
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-          decoration: BoxDecoration(
-            color: Colors.orange.shade50,
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: Colors.orange.shade200),
-          ),
-          child: Text(
-            'Edukasi',
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-              color: Colors.orange.shade700,
-              fontWeight: FontWeight.w600,
-            ),
+              const SizedBox(height: 8),
+
+              // Kategori Game
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 8,
+                ),
+                decoration: BoxDecoration(
+                  color: Colors.orange.shade50,
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(color: Colors.orange.shade200),
+                ),
+                child: Text(
+                  'Edukasi',
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: Colors.orange.shade700,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ],
           ),
         ),
       ],
     );
   }
 
-  // STABILITAS: Seksi Galeri dengan Fixed Height & Padding untuk Shadow
+  // B. STABILITAS: Seksi Galeri dengan Fixed Height & Padding untuk Shadow
   Widget _buildStableGallerySection() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -602,7 +717,7 @@ class _ARDetailPageState extends State<ARDetailPage>
     );
   }
 
-  // PRESISI: Seksi Deskripsi dengan alignment yang sempurna
+  // C. PRESISI: Seksi Deskripsi dengan alignment yang sempurna
   Widget _buildAboutSection(BuildContext context, ARContent content) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -678,7 +793,7 @@ class _ARDetailPageState extends State<ARDetailPage>
     );
   }
 
-  // WAJIB: Tombol pemicu alur pop-up dengan debugging
+  // D. WAJIB: Tombol pemicu alur pop-up dengan debugging
   Widget _buildNeomorphicActionButton(BuildContext context, ARContent content) {
     return Consumer<ARContentProvider>(
       builder: (context, provider, child) {
@@ -1106,7 +1221,6 @@ class _MarketplacePopup extends StatelessWidget {
               height: 52,
               onPressed: () {
                 debugPrint('Tokopedia button pressed');
-                // TODO: Open Tokopedia link
                 onClose();
               },
               child: Row(
@@ -1135,7 +1249,6 @@ class _MarketplacePopup extends StatelessWidget {
               height: 52,
               onPressed: () {
                 debugPrint('Shopee button pressed');
-                // TODO: Open Shopee link
                 onClose();
               },
               child: Row(
