@@ -82,14 +82,16 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
       _currentIndex = index;
     });
 
-    _pageController.animateToPage(
-      index,
-      duration: AppConstants.mediumAnimation,
-      curve: Curves.easeInOut,
-    ).then((_) {
-      // Reset flag setelah animasi selesai
-      _isAnimatingToPage = false;
-    });
+    _pageController
+        .animateToPage(
+          index,
+          duration: AppConstants.mediumAnimation,
+          curve: Curves.easeInOut,
+        )
+        .then((_) {
+          // Reset flag setelah animasi selesai
+          _isAnimatingToPage = false;
+        });
 
     // Animate icons
     for (int i = 0; i < _iconControllers.length; i++) {
