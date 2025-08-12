@@ -188,7 +188,7 @@ class _CollectionPageState extends State<CollectionPage>
             gradient: LinearGradient(
               colors:
                   AppColors.backgroundGradient
-                      .map((color) => color.withOpacity(0.8))
+                      .map((color) => color.withOpacity(0.6))
                       .toList(),
               begin: Alignment.topCenter,
               end: Alignment.bottomCenter,
