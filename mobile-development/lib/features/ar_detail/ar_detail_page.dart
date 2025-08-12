@@ -462,7 +462,7 @@ class _ARDetailPageState extends State<ARDetailPage>
 
               const SizedBox(height: 40),
 
-              // B. STABILITAS: Seksi Galeri dengan fixed height
+              // B. STABILITAS: Seksi Galeri dengan Fixed Height & Padding untuk Shadow
               _buildStableGallerySection(),
 
               const SizedBox(height: 40),
@@ -612,30 +612,30 @@ class _ARDetailPageState extends State<ARDetailPage>
 
         const SizedBox(height: 24),
 
-        // STABILITAS: Container dengan tinggi tetap (FIXED HEIGHT)
+        // PERBAIKAN SHADOW: Container dengan tinggi yang lebih besar untuk shadow
         SizedBox(
-          height: _carouselFixedHeight, // Tinggi tetap untuk stabilitas
-          child: Container(
-            // VISUAL: Padding di semua sisi untuk "ruang napas" shadow
-            padding: const EdgeInsets.symmetric(
-              vertical: 20, // Ruang atas-bawah untuk shadow
-              horizontal: 0, // Horizontal padding diatur per item
-            ),
-            child: PageView.builder(
-              controller: _imageController,
-              onPageChanged: (index) {
-                setState(() {
-                  _currentImageIndex = index;
-                });
-              },
-              itemCount: _carouselImages.length,
-              itemBuilder: (context, index) {
-                return Container(
-                  // Margin horizontal untuk spacing dan shadow
-                  margin: const EdgeInsets.symmetric(
-                    horizontal: _horizontalPadding,
-                  ),
-                  height: _carouselImageHeight, // Tinggi gambar yang konsisten
+          height: _carouselFixedHeight + 40, // TAMBAH 40px untuk ruang shadow
+          child: PageView.builder(
+            controller: _imageController,
+            // PERBAIKAN: Tambahkan clipBehavior untuk shadow tidak terpotong
+            clipBehavior: Clip.none,
+            onPageChanged: (index) {
+              setState(() {
+                _currentImageIndex = index;
+              });
+            },
+            itemCount: _carouselImages.length,
+            itemBuilder: (context, index) {
+              return Container(
+                // PERBAIKAN: Padding yang cukup untuk shadow di semua sisi
+                padding: const EdgeInsets.only(
+                  left: _horizontalPadding,
+                  right: _horizontalPadding,
+                  top: 20, // Ruang atas untuk shadow
+                  bottom: 20, // Ruang bawah untuk shadow
+                ),
+                child: Container(
+                  height: _carouselImageHeight,
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(24),
                     gradient: LinearGradient(
@@ -647,39 +647,54 @@ class _ARDetailPageState extends State<ARDetailPage>
                         AppColors.leafGreen.withOpacity(0.2),
                       ],
                     ),
+                    // PERBAIKAN: Shadow yang lebih terlihat dan tidak terpotong
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withOpacity(0.2),
-                        blurRadius: 16,
+                        color: Colors.black.withOpacity(0.15),
+                        blurRadius:
+                            20, // Diperbesar untuk shadow yang lebih soft
                         offset: const Offset(0, 8),
+                        spreadRadius:
+                            2, // Tambah spread untuk shadow yang lebih luas
+                      ),
+                      // TAMBAHAN: Shadow kedua untuk depth effect
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.08),
+                        blurRadius: 40,
+                        offset: const Offset(0, 16),
+                        spreadRadius: 4,
                       ),
                     ],
                   ),
-                  child: Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(Icons.image, size: 80, color: Colors.white),
-                        const SizedBox(height: 16),
-                        Text(
-                          'Gambar ${index + 1}',
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.w700,
-                            fontSize: 20,
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(24),
+                    child: Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.image, size: 80, color: Colors.white),
+                          const SizedBox(height: 16),
+                          Text(
+                            'Gambar ${index + 1}',
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.w700,
+                              fontSize: 20,
+                            ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
                   ),
-                );
-              },
-            ),
+                ),
+              );
+            },
           ),
         ),
 
-        const SizedBox(height: 24),
-
+        const SizedBox(
+          height: 8,
+        ), // KURANGI spacing karena sudah ada padding di atas
         // Dots indicator dengan padding konsisten
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: _horizontalPadding),
