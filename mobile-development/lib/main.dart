@@ -8,7 +8,6 @@ import 'shared/providers/ar_content_provider.dart';
 import 'shared/providers/settings_provider.dart';
 import 'shared/widgets/main_screen.dart';
 import 'features/ar_viewer/ar_viewer_page.dart';
-import 'debug_font_test.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -59,7 +58,6 @@ class KookaApp extends StatelessWidget {
         home: const MainScreen(),
         routes: {
           AppConstants.homeRoute: (context) => const MainScreen(),
-          '/font-test': (context) => const FontTestPage(), // Debug route
           AppConstants.arViewerRoute: (context) {
             final contentId =
                 ModalRoute.of(context)!.settings.arguments as String;
