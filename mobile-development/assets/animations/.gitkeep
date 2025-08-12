@@ -1,0 +1,20 @@
+# Animations
+
+This folder will contain Lottie animation files and other animated assets for the Kooka app.
+
+## Planned Animations
+
+- Loading animations for AR content
+- Button press feedback animations  
+- Character animations for mascots
+- Transition animations between screens
+
+## File Formats
+
+- Lottie JSON files (.json)
+- GIF files for simple animations
+- MP4 files for video backgrounds
+
+## Usage
+
+Animations will be used to enhance the magical and playful experience of the app while maintaining good performance.
