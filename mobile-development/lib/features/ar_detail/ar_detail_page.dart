@@ -22,9 +22,30 @@ class _ARDetailPageState extends State<ARDetailPage>
     with TickerProviderStateMixin {
   late AnimationController _heroController;
   late AnimationController _contentController;
+  late AnimationController _panelController;
   late Animation<double> _heroAnimation;
   late Animation<double> _contentAnimation;
-  late Animation<Offset> _slideAnimation;
+  late Animation<Offset> _panelSlideAnimation;
+  late Animation<double> _panelFadeAnimation;
+
+  PageController _imageController = PageController();
+  int _currentImageIndex = 0;
+  ScrollController _scrollController = ScrollController();
+
+  // Konstanta untuk konsistensi padding
+  static const double _horizontalPadding = 24.0;
+  // STABILITAS: Fixed height untuk carousel mencegah layout naik-turun
+  static const double _carouselFixedHeight = 300.0;
+  static const double _carouselImageHeight =
+      260.0; // Tinggi gambar di dalam carousel
+
+  // Sample images for carousel
+  final List<String> _carouselImages = [
+    'assets/images/sample1.jpg',
+    'assets/images/sample2.jpg',
+    'assets/images/sample3.jpg',
+    'assets/images/sample4.jpg',
+  ];
 
   @override
   void initState() {
@@ -40,6 +61,11 @@ class _ARDetailPageState extends State<ARDetailPage>
       vsync: this,
     );
 
+    _panelController = AnimationController(
+      duration: const Duration(milliseconds: 800),
+      vsync: this,
+    );
+
     _heroAnimation = CurvedAnimation(
       parent: _heroController,
       curve: Curves.easeOutBack,
@@ -50,10 +76,17 @@ class _ARDetailPageState extends State<ARDetailPage>
       curve: Curves.easeOut,
     );
 
-    _slideAnimation = Tween<Offset>(
-      begin: const Offset(0, 1),
+    _panelSlideAnimation = Tween<Offset>(
+      begin: const Offset(0, 0.5),
       end: Offset.zero,
-    ).animate(_contentAnimation);
+    ).animate(
+      CurvedAnimation(parent: _panelController, curve: Curves.easeOutCubic),
+    );
+
+    _panelFadeAnimation = CurvedAnimation(
+      parent: _panelController,
+      curve: Curves.easeOut,
+    );
 
     // Start animations
     _heroController.forward();
@@ -62,12 +95,20 @@ class _ARDetailPageState extends State<ARDetailPage>
         _contentController.forward();
       }
     });
+    Future.delayed(const Duration(milliseconds: 600), () {
+      if (mounted) {
+        _panelController.forward();
+      }
+    });
   }
 
   @override
   void dispose() {
     _heroController.dispose();
     _contentController.dispose();
+    _panelController.dispose();
+    _imageController.dispose();
+    _scrollController.dispose();
     super.dispose();
   }
 
@@ -82,229 +123,140 @@ class _ARDetailPageState extends State<ARDetailPage>
             return _buildErrorView();
           }
 
-          return Container(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: AppColors.backgroundGradient,
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-              ),
-            ),
-            child: SafeArea(
-              child: Column(
-                children: [
-                  // Header with back button
-                  _buildHeader(context),
+          return Stack(
+            children: [
+              // LAPISAN BELAKANG: Latar Belakang AR + Tombol Kembali (DIAM/ABSOLUT)
+              _buildBackgroundLayer(context, content),
 
-                  // Scrollable content
-                  Expanded(
-                    child: SingleChildScrollView(
-                      physics: const BouncingScrollPhysics(),
-                      child: Column(
-                        children: [
-                          // Hero image/animation section
-                          _buildHeroSection(content),
-
-                          // Content details
-                          SlideTransition(
-                            position: _slideAnimation,
-                            child: FadeTransition(
-                              opacity: _contentAnimation,
-                              child: _buildContentDetails(context, content),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
+              // LAPISAN DEPAN: Panel Konten Putih (BISA DI-SCROLL)
+              _buildScrollableContentLayer(context, content),
+            ],
           );
         },
       ),
     );
   }
 
-  Widget _buildHeader(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.all(20),
-      child: Row(
+  // LAPISAN BELAKANG: AR Background + Tombol Kembali Absolut
+  Widget _buildBackgroundLayer(BuildContext context, ARContent content) {
+    return Positioned.fill(
+      child: Stack(
         children: [
-          NeumorphicButton(
-            onPressed: () => Navigator.pop(context),
-            width: 56,
-            height: 56,
-            padding: const EdgeInsets.all(12),
-            borderRadius: 28,
-            child: const Icon(
-              Icons.arrow_back,
-              color: AppColors.primary,
-              size: 24,
+          // Full-screen AR preview background
+          _buildFullScreenARPreview(content),
+
+          // ABSOLUT: Tombol Kembali yang menempel pada latar AR (TIDAK BERGERAK)
+          Positioned(
+            top: MediaQuery.of(context).padding.top + 20,
+            left: 20,
+            child: Container(
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(28),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.15),
+                    blurRadius: 12,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: _NeomorphicButton(
+                size: 56,
+                onPressed: () {
+                  debugPrint('Back button pressed - Absolute position');
+                  Navigator.pop(context);
+                },
+                child: const Icon(
+                  Icons.arrow_back,
+                  color: Colors.black54,
+                  size: 24,
+                ),
+              ),
             ),
           ),
-          const Spacer(),
-          Text(
-            'Detail Mainan',
-            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-              color: AppColors.primary,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          const Spacer(),
-          const SizedBox(width: 56), // Balance the back button
         ],
       ),
     );
   }
 
-  Widget _buildHeroSection(ARContent content) {
-    return ScaleTransition(
-      scale: _heroAnimation,
-      child: Container(
-        margin: const EdgeInsets.symmetric(horizontal: 20),
-        height: 280,
-        decoration: AppTheme.neumorphismDecoration(
-          borderRadius: 24,
-          intensity: 1.2,
+  // LAPISAN DEPAN: Scrollable Content Layer
+  Widget _buildScrollableContentLayer(BuildContext context, ARContent content) {
+    return CustomScrollView(
+      controller: _scrollController,
+      physics: const ClampingScrollPhysics(), // Mencegah overscroll/bounce
+      slivers: [
+        // Spacer untuk memberikan ruang pada latar AR
+        SliverToBoxAdapter(
+          child: SizedBox(height: MediaQuery.of(context).size.height * 0.45),
         ),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(24),
-          child: Stack(
-            children: [
-              // Background gradient
-              Container(
+
+        // Panel konten utama dengan alignment yang presisi
+        SliverToBoxAdapter(child: _buildMainContentPanel(context, content)),
+      ],
+    );
+  }
+
+  Widget _buildFullScreenARPreview(ARContent content) {
+    return Container(
+      decoration: BoxDecoration(
+        gradient: RadialGradient(
+          center: Alignment.center,
+          radius: 1.5,
+          colors: [
+            AppColors.primary.withOpacity(0.3),
+            AppColors.skyBlue.withOpacity(0.2),
+            AppColors.leafGreen.withOpacity(0.1),
+            AppColors.primary.withOpacity(0.4),
+          ],
+        ),
+      ),
+      child: Stack(
+        children: [
+          // Animated 3D elements
+          _buildFloating3DElements(),
+
+          // Central AR preview icon
+          Center(
+            child: ScaleTransition(
+              scale: _heroAnimation,
+              child: Container(
+                width: 200,
+                height: 200,
                 decoration: BoxDecoration(
-                  gradient: RadialGradient(
-                    center: Alignment.center,
-                    radius: 1.2,
-                    colors: [
-                      AppColors.primary.withOpacity(0.1),
-                      AppColors.skyBlue.withOpacity(0.05),
-                      AppColors.leafGreen.withOpacity(0.05),
-                    ],
+                  color: Colors.white.withOpacity(0.2),
+                  shape: BoxShape.circle,
+                  border: Border.all(
+                    color: Colors.white.withOpacity(0.3),
+                    width: 2,
                   ),
                 ),
+                child: Icon(
+                  _getIconForContent(content.title),
+                  size: 100,
+                  color: Colors.white.withOpacity(0.8),
+                ),
               ),
+            ),
+          ),
 
-              // Placeholder for AR content preview
-              Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Container(
-                      width: 120,
-                      height: 120,
-                      decoration: BoxDecoration(
-                        color: AppColors.primary.withOpacity(0.2),
-                        shape: BoxShape.circle,
-                        border: Border.all(color: AppColors.primary, width: 3),
-                      ),
-                      child: Icon(
-                        _getIconForContent(content.title),
-                        size: 60,
-                        color: AppColors.primary,
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 8,
-                      ),
-                      decoration: BoxDecoration(
-                        color: AppColors.primary.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: Text(
-                        'Preview AR',
-                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: AppColors.primary,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ),
+          // Gradient overlay untuk transisi ke konten
+          Positioned(
+            bottom: 0,
+            left: 0,
+            right: 0,
+            height: 150,
+            child: Container(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    Colors.transparent,
+                    Colors.white.withOpacity(0.1),
+                    Colors.white.withOpacity(0.3),
                   ],
                 ),
               ),
-
-              // Status badge
-              Positioned(top: 16, right: 16, child: _buildStatusBadge(content)),
-
-              // Age group badge
-              Positioned(
-                top: 16,
-                left: 16,
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 6,
-                  ),
-                  decoration: BoxDecoration(
-                    color: AppColors.skyBlue.withOpacity(0.9),
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  child: Text(
-                    content.ageGroup,
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: AppColors.textLight,
-                      fontWeight: FontWeight.w600,
-                      fontSize: 12,
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildStatusBadge(ARContent content) {
-    Color badgeColor;
-    IconData badgeIcon;
-    String badgeText;
-
-    switch (content.status) {
-      case AppConstants.statusNotDownloaded:
-        badgeColor = AppColors.warning;
-        badgeIcon = Icons.cloud_download;
-        badgeText = 'Belum Diunduh';
-        break;
-      case AppConstants.statusDownloading:
-        badgeColor = AppColors.primary;
-        badgeIcon = Icons.downloading;
-        badgeText = 'Mengunduh...';
-        break;
-      case AppConstants.statusReady:
-        badgeColor = AppColors.success;
-        badgeIcon = Icons.check_circle;
-        badgeText = 'Siap Dimainkan';
-        break;
-      default:
-        badgeColor = AppColors.textSecondary;
-        badgeIcon = Icons.help;
-        badgeText = 'Unknown';
-    }
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-      decoration: BoxDecoration(
-        color: badgeColor,
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(badgeIcon, color: AppColors.textLight, size: 16),
-          const SizedBox(width: 4),
-          Text(
-            badgeText,
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-              color: AppColors.textLight,
-              fontWeight: FontWeight.w600,
-              fontSize: 11,
             ),
           ),
         ],
@@ -312,186 +264,77 @@ class _ARDetailPageState extends State<ARDetailPage>
     );
   }
 
-  Widget _buildContentDetails(BuildContext context, ARContent content) {
-    return Padding(
-      padding: const EdgeInsets.all(20),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Title and favorite button
-          Row(
-            children: [
-              Expanded(
-                child: Text(
-                  content.title,
-                  style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                    color: AppColors.textPrimary,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-              Consumer<ARContentProvider>(
-                builder: (context, provider, child) {
-                  return NeumorphicButton(
-                    onPressed: () => provider.toggleFavorite(content.id),
-                    width: 56,
-                    height: 56,
-                    padding: const EdgeInsets.all(12),
-                    borderRadius: 28,
-                    child: Icon(
-                      content.isFavorite
-                          ? Icons.favorite
-                          : Icons.favorite_border,
-                      color:
-                          content.isFavorite
-                              ? AppColors.error
-                              : AppColors.textSecondary,
-                      size: 24,
-                    ),
-                  );
-                },
-              ),
-            ],
-          ),
-
-          const SizedBox(height: 16),
-
-          // Description
-          Container(
-            padding: const EdgeInsets.all(20),
-            decoration: AppTheme.neumorphismDecoration(
-              borderRadius: 16,
-              intensity: 0.8,
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Tentang Mainan Ini',
-                  style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                    fontWeight: FontWeight.bold,
-                    color: AppColors.primary,
-                  ),
-                ),
-                const SizedBox(height: 12),
-                Text(
-                  content.description,
-                  style: Theme.of(
-                    context,
-                  ).textTheme.bodyMedium?.copyWith(height: 1.5),
-                ),
-              ],
-            ),
-          ),
-
-          const SizedBox(height: 20),
-
-          // Info cards
-          _buildInfoCards(content),
-
-          const SizedBox(height: 24),
-
-          // Main action button
-          _buildMainActionButton(context, content),
-
-          const SizedBox(height: 16),
-
-          // Book purchase section
-          _buildBookPurchaseSection(context),
-
-          const SizedBox(height: 20),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildInfoCards(ARContent content) {
-    return Row(
+  Widget _buildFloating3DElements() {
+    return Stack(
       children: [
-        Expanded(
-          child: Container(
-            padding: const EdgeInsets.all(16),
-            decoration: AppTheme.neumorphismDecoration(
-              borderRadius: 12,
-              intensity: 0.6,
-            ),
-            child: Column(
-              children: [
-                Icon(Icons.file_download, color: AppColors.primary, size: 24),
-                const SizedBox(height: 8),
-                Text(
-                  content.formattedSize,
-                  style: Theme.of(
-                    context,
-                  ).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.bold),
-                ),
-                Text(
-                  'Ukuran',
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: AppColors.textSecondary,
+        // Floating element 1
+        Positioned(
+          top: 120,
+          left: 50,
+          child: ScaleTransition(
+            scale: _contentAnimation,
+            child: Container(
+              width: 60,
+              height: 60,
+              decoration: BoxDecoration(
+                color: AppColors.skyBlue.withOpacity(0.4),
+                borderRadius: BorderRadius.circular(30),
+                boxShadow: [
+                  BoxShadow(
+                    color: AppColors.skyBlue.withOpacity(0.3),
+                    blurRadius: 20,
+                    offset: const Offset(0, 10),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: Container(
-            padding: const EdgeInsets.all(16),
-            decoration: AppTheme.neumorphismDecoration(
-              borderRadius: 12,
-              intensity: 0.6,
-            ),
-            child: Column(
-              children: [
-                Icon(
-                  Icons.play_circle_filled,
-                  color: AppColors.success,
-                  size: 24,
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  '${content.playCount}x',
-                  style: Theme.of(
-                    context,
-                  ).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.bold),
-                ),
-                Text(
-                  'Dimainkan',
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: AppColors.textSecondary,
+
+        // Floating element 2
+        Positioned(
+          top: 250,
+          right: 80,
+          child: FadeTransition(
+            opacity: _contentAnimation,
+            child: Container(
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                color: AppColors.leafGreen.withOpacity(0.4),
+                borderRadius: BorderRadius.circular(20),
+                boxShadow: [
+                  BoxShadow(
+                    color: AppColors.leafGreen.withOpacity(0.3),
+                    blurRadius: 15,
+                    offset: const Offset(0, 8),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: Container(
-            padding: const EdgeInsets.all(16),
-            decoration: AppTheme.neumorphismDecoration(
-              borderRadius: 12,
-              intensity: 0.6,
-            ),
-            child: Column(
-              children: [
-                Icon(Icons.child_care, color: AppColors.skyBlue, size: 24),
-                const SizedBox(height: 8),
-                Text(
-                  content.ageGroup.split(' ')[0],
-                  style: Theme.of(
-                    context,
-                  ).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.bold),
-                ),
-                Text(
-                  'Usia',
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: AppColors.textSecondary,
+
+        // Floating element 3
+        Positioned(
+          bottom: 350,
+          left: 100,
+          child: SlideTransition(
+            position: _panelSlideAnimation,
+            child: Container(
+              width: 80,
+              height: 80,
+              decoration: BoxDecoration(
+                color: AppColors.softPink.withOpacity(0.3),
+                borderRadius: BorderRadius.circular(40),
+                boxShadow: [
+                  BoxShadow(
+                    color: AppColors.softPink.withOpacity(0.2),
+                    blurRadius: 25,
+                    offset: const Offset(0, 12),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         ),
@@ -499,7 +342,344 @@ class _ARDetailPageState extends State<ARDetailPage>
     );
   }
 
-  Widget _buildMainActionButton(BuildContext context, ARContent content) {
+  Widget _buildMainContentPanel(BuildContext context, ARContent content) {
+    return SlideTransition(
+      position: _panelSlideAnimation,
+      child: FadeTransition(
+        opacity: _panelFadeAnimation,
+        child: Container(
+          width: double.infinity,
+          constraints: BoxConstraints(
+            minHeight: MediaQuery.of(context).size.height * 0.6,
+          ),
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.only(
+              topLeft: Radius.circular(32),
+              topRight: Radius.circular(32),
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black12,
+                blurRadius: 20,
+                offset: Offset(0, -10),
+              ),
+            ],
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Handle bar
+              Center(
+                child: Container(
+                  margin: const EdgeInsets.only(top: 16, bottom: 24),
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: Colors.grey.shade300,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              ),
+
+              // 1. Judul Game & Kategori (padding konsisten)
+              Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: _horizontalPadding,
+                ),
+                child: _buildTitleAndCategory(context, content),
+              ),
+
+              const SizedBox(height: 40),
+
+              // 2. STABILITAS: Seksi Galeri dengan fixed height
+              _buildStableGallerySection(),
+
+              const SizedBox(height: 40),
+
+              // 3. Seksi Deskripsi dengan alignment presisi
+              _buildAboutSection(context, content),
+
+              const SizedBox(height: 48),
+
+              // 4. Tombol Aksi dengan padding konsisten
+              Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: _horizontalPadding,
+                ),
+                child: _buildNeomorphicActionButton(context, content),
+              ),
+
+              const SizedBox(height: 40),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTitleAndCategory(BuildContext context, ARContent content) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Game Title
+        Text(
+          content.title,
+          style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+            color: AppColors.textPrimary,
+            fontWeight: FontWeight.bold,
+            fontSize: 32,
+          ),
+        ),
+
+        const SizedBox(height: 12),
+
+        // Game Category
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          decoration: BoxDecoration(
+            color: Colors.orange.shade50,
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: Colors.orange.shade200),
+          ),
+          child: Text(
+            'Edukasi',
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+              color: Colors.orange.shade700,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  // STABILITAS: Seksi Galeri dengan Fixed Height & Padding untuk Shadow
+  Widget _buildStableGallerySection() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Judul dengan padding konsisten
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: _horizontalPadding),
+          child: Text(
+            'Galeri Gambar',
+            style: TextStyle(
+              fontSize: 22,
+              fontWeight: FontWeight.bold,
+              color: AppColors.textPrimary,
+            ),
+          ),
+        ),
+
+        const SizedBox(height: 10),
+
+        // PENTING: Garis Pemisah Oranye Full-width dengan padding konsisten
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: _horizontalPadding),
+          child: Container(
+            width: double.infinity,
+            height: 3,
+            decoration: BoxDecoration(
+              color: Colors.orange,
+              borderRadius: BorderRadius.circular(2),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.orange.withOpacity(0.4),
+                  blurRadius: 6,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+          ),
+        ),
+
+        const SizedBox(height: 24),
+
+        // STABILITAS: Container dengan tinggi tetap (FIXED HEIGHT)
+        SizedBox(
+          height: _carouselFixedHeight, // Tinggi tetap untuk stabilitas
+          child: Container(
+            // VISUAL: Padding di semua sisi untuk "ruang napas" shadow
+            padding: const EdgeInsets.symmetric(
+              vertical: 20, // Ruang atas-bawah untuk shadow
+              horizontal: 0, // Horizontal padding diatur per item
+            ),
+            child: PageView.builder(
+              controller: _imageController,
+              onPageChanged: (index) {
+                setState(() {
+                  _currentImageIndex = index;
+                });
+              },
+              itemCount: _carouselImages.length,
+              itemBuilder: (context, index) {
+                return Container(
+                  // Margin horizontal untuk spacing dan shadow
+                  margin: const EdgeInsets.symmetric(
+                    horizontal: _horizontalPadding,
+                  ),
+                  height: _carouselImageHeight, // Tinggi gambar yang konsisten
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(24),
+                    gradient: LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [
+                        AppColors.primary.withOpacity(0.4),
+                        AppColors.skyBlue.withOpacity(0.4),
+                        AppColors.leafGreen.withOpacity(0.2),
+                      ],
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.2),
+                        blurRadius: 16,
+                        offset: const Offset(0, 8),
+                      ),
+                    ],
+                  ),
+                  child: Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.image, size: 80, color: Colors.white),
+                        const SizedBox(height: 16),
+                        Text(
+                          'Gambar ${index + 1}',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w700,
+                            fontSize: 20,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+        ),
+
+        const SizedBox(height: 24),
+
+        // Dots indicator dengan padding konsisten
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: _horizontalPadding),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: List.generate(
+              _carouselImages.length,
+              (index) => AnimatedContainer(
+                duration: const Duration(milliseconds: 300),
+                width: _currentImageIndex == index ? 14 : 10,
+                height: _currentImageIndex == index ? 14 : 10,
+                margin: const EdgeInsets.symmetric(horizontal: 6),
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color:
+                      _currentImageIndex == index
+                          ? Colors.orange
+                          : Colors.grey.shade300,
+                  boxShadow:
+                      _currentImageIndex == index
+                          ? [
+                            BoxShadow(
+                              color: Colors.orange.withOpacity(0.4),
+                              blurRadius: 10,
+                              offset: const Offset(0, 3),
+                            ),
+                          ]
+                          : null,
+                ),
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  // PRESISI: Seksi Deskripsi dengan alignment yang sempurna
+  Widget _buildAboutSection(BuildContext context, ARContent content) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Judul dengan padding konsisten
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: _horizontalPadding),
+          child: Text(
+            'Tentang Game Ini',
+            style: TextStyle(
+              fontSize: 22,
+              fontWeight: FontWeight.bold,
+              color: AppColors.textPrimary,
+            ),
+          ),
+        ),
+
+        const SizedBox(height: 10),
+
+        // PENTING: Garis Pemisah Oranye Full-width dengan padding konsisten
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: _horizontalPadding),
+          child: Container(
+            width: double.infinity,
+            height: 3,
+            decoration: BoxDecoration(
+              color: Colors.orange,
+              borderRadius: BorderRadius.circular(2),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.orange.withOpacity(0.4),
+                  blurRadius: 6,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+          ),
+        ),
+
+        const SizedBox(height: 20),
+
+        // Teks deskripsi dengan padding konsisten dan hierarki font
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: _horizontalPadding),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                content.description,
+                style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                  height: 1.6,
+                  color: AppColors.textSecondary,
+                  fontSize: 14, // Font lebih kecil dari judul untuk hierarki
+                  fontWeight: FontWeight.w400,
+                ),
+              ),
+
+              const SizedBox(height: 16),
+
+              Text(
+                'Game AR interaktif ini menggunakan teknologi Augmented Reality untuk memberikan pengalaman belajar yang menyenangkan dan mendidik untuk anak-anak.',
+                style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                  height: 1.6,
+                  color: AppColors.textSecondary,
+                  fontSize: 14, // Font lebih kecil dari judul untuk hierarki
+                  fontWeight: FontWeight.w400,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  // WAJIB: Tombol pemicu alur pop-up dengan debugging
+  Widget _buildNeomorphicActionButton(BuildContext context, ARContent content) {
     return Consumer<ARContentProvider>(
       builder: (context, provider, child) {
         String buttonText;
@@ -508,9 +688,13 @@ class _ARDetailPageState extends State<ARDetailPage>
 
         switch (content.status) {
           case AppConstants.statusNotDownloaded:
-            buttonText = 'Unduh Mainan';
-            buttonIcon = Icons.download;
-            onPressed = () => provider.downloadContent(content.id);
+            buttonText = 'Mainkan Sekarang';
+            buttonIcon = Icons.play_arrow;
+            // WAJIB: Pemicu alur pop-up dengan debugging
+            onPressed = () {
+              debugPrint('Button pressed - showing popup');
+              _showBookConfirmationPopup(context, content);
+            };
             break;
           case AppConstants.statusDownloading:
             final progress = provider.downloadProgress[content.id] ?? 0.0;
@@ -529,309 +713,142 @@ class _ARDetailPageState extends State<ARDetailPage>
             onPressed = null;
         }
 
-        // Menentukan style button berdasarkan status
-        if (content.status == AppConstants.statusReady) {
-          return Kooka3DPrimaryButton(
-            text: buttonText,
-            icon: buttonIcon,
-            onPressed: onPressed,
-            width: double.infinity,
-            height: 60,
-          );
-        } else if (content.status == AppConstants.statusNotDownloaded) {
-          // Button hijau untuk download
-          return Kooka3DButton(
-            onPressed: onPressed,
-            width: double.infinity,
-            height: 60,
-            isPrimary: false,
-            color: AppColors.success, // Hijau untuk download
-            isEnabled: onPressed != null,
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(buttonIcon, color: AppColors.textLight, size: 20),
-                const SizedBox(width: 8),
-                Text(
-                  buttonText,
-                  style: const TextStyle(
-                    color: AppColors.textLight,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 16,
-                  ),
-                ),
-              ],
-            ),
-          );
-        } else {
-          // Status downloading atau error - gunakan tombol disabled
-          return Kooka3DButton(
-            onPressed: null,
-            width: double.infinity,
-            height: 60,
-            isEnabled: false,
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                if (content.status == AppConstants.statusDownloading) ...[
-                  const SizedBox(
-                    width: 20,
-                    height: 20,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      valueColor: AlwaysStoppedAnimation<Color>(
-                        AppColors.textSecondary,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                ] else ...[
-                  Icon(buttonIcon, color: AppColors.textSecondary, size: 24),
-                  const SizedBox(width: 12),
-                ],
-                Text(
-                  buttonText,
-                  style: const TextStyle(
-                    color: AppColors.textSecondary,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 16,
-                  ),
-                ),
-              ],
-            ),
-          );
-        }
-      },
-    );
-  }
-
-  Widget _buildBookPurchaseSection(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: AppTheme.neumorphismDecoration(
-        borderRadius: 16,
-        intensity: 0.8,
-      ),
-      child: Column(
-        children: [
-          Row(
+        return _NeomorphicButton(
+          width: double.infinity,
+          height: 64,
+          onPressed: onPressed,
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: AppColors.primary.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(12),
+              if (content.status == AppConstants.statusDownloading) ...[
+                const SizedBox(
+                  width: 24,
+                  height: 24,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2.5,
+                    valueColor: AlwaysStoppedAnimation<Color>(Colors.black54),
+                  ),
                 ),
-                child: const Icon(
-                  Icons.auto_stories,
-                  color: AppColors.primary,
-                  size: 24,
-                ),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Belum punya bukunya?',
-                      style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                        fontWeight: FontWeight.bold,
-                        color: AppColors.primary,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      'Dapatkan keajaibannya di sini!',
-                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: AppColors.textSecondary,
-                      ),
-                    ),
-                  ],
+                const SizedBox(width: 16),
+              ] else ...[
+                Icon(buttonIcon, color: Colors.black54, size: 28),
+                const SizedBox(width: 16),
+              ],
+              Text(
+                buttonText,
+                style: const TextStyle(
+                  color: Colors.black54,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 18,
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 16),
-          Kooka3DSecondaryButton(
-            text: 'Beli Buku Sekarang',
-            icon: Icons.shopping_cart,
-            onPressed: () => _showParentGate(context),
-            width: double.infinity,
-            height: 56,
-          ),
-        ],
-      ),
+        );
+      },
+    );
+  }
+
+  // WAJIB: Alur Pop-up Buku (Langkah 1) dengan perbaikan
+  void _showBookConfirmationPopup(BuildContext context, ARContent content) {
+    debugPrint('Showing book confirmation popup');
+
+    if (!mounted) return;
+
+    showDialog(
+      context: context,
+      barrierDismissible: true,
+      barrierColor: Colors.black54,
+      builder: (BuildContext dialogContext) {
+        return _BookConfirmationPopup(
+          onHaveBook: () {
+            debugPrint('User has book - starting download');
+            Navigator.pop(dialogContext);
+            if (mounted) {
+              context.read<ARContentProvider>().downloadContent(content.id);
+            }
+          },
+          onNeedBook: () {
+            debugPrint('User needs book - showing marketplace');
+            Navigator.pop(dialogContext);
+            if (mounted) {
+              _showMarketplacePopup(context);
+            }
+          },
+        );
+      },
+    );
+  }
+
+  // WAJIB: Alur Pop-up Marketplace (Langkah 2) dengan perbaikan
+  void _showMarketplacePopup(BuildContext context) {
+    debugPrint('Showing marketplace popup');
+
+    if (!mounted) return;
+
+    showDialog(
+      context: context,
+      barrierDismissible: true,
+      barrierColor: Colors.black54,
+      builder:
+          (BuildContext dialogContext) =>
+              _MarketplacePopup(onClose: () => Navigator.pop(dialogContext)),
     );
   }
 
   Widget _buildErrorView() {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          const Icon(Icons.error_outline, size: 80, color: AppColors.error),
-          const SizedBox(height: 20),
-          Text(
-            'Konten Tidak Ditemukan',
-            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-              color: AppColors.textPrimary,
-              fontWeight: FontWeight.bold,
+    return Container(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: AppColors.backgroundGradient,
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+        ),
+      ),
+      child: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(Icons.error_outline, size: 80, color: AppColors.error),
+            const SizedBox(height: 20),
+            Text(
+              'Konten Tidak Ditemukan',
+              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                color: AppColors.textPrimary,
+                fontWeight: FontWeight.bold,
+              ),
             ),
-          ),
-          const SizedBox(height: 16),
-          Kooka3DPrimaryButton(
-            text: 'Kembali',
-            icon: Icons.arrow_back,
-            onPressed: () => Navigator.pop(context),
-          ),
-        ],
+            const SizedBox(height: 16),
+            _NeomorphicButton(
+              onPressed: () => Navigator.pop(context),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: const [
+                  Icon(Icons.arrow_back, color: Colors.black54),
+                  SizedBox(width: 8),
+                  Text(
+                    'Kembali',
+                    style: TextStyle(
+                      color: Colors.black54,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
 
   void _openARViewer(BuildContext context, String contentId) {
-    // Increment play count
     context.read<ARContentProvider>().incrementPlayCount(contentId);
-
-    // Navigate to AR viewer
     Navigator.push(
       context,
       MaterialPageRoute(
         builder: (context) => ARViewerPage(contentId: contentId),
       ),
-    );
-  }
-
-  void _showParentGate(BuildContext context) {
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (BuildContext context) {
-        return Dialog(
-          backgroundColor: Colors.transparent,
-          child: Container(
-            padding: const EdgeInsets.all(24),
-            decoration: AppTheme.neumorphismDecoration(
-              borderRadius: 20,
-              intensity: 1.2,
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Icon(Icons.security, size: 60, color: AppColors.primary),
-                const SizedBox(height: 16),
-                Text(
-                  'Verifikasi Orang Tua',
-                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                    color: AppColors.primary,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                const SizedBox(height: 12),
-                Text(
-                  'Untuk melindungi anak-anak, akses ke toko online memerlukan konfirmasi orang tua.',
-                  textAlign: TextAlign.center,
-                  style: Theme.of(context).textTheme.bodyMedium,
-                ),
-                const SizedBox(height: 20),
-                Row(
-                  children: [
-                    Expanded(
-                      child: NeumorphicButton(
-                        onPressed: () => Navigator.pop(context),
-                        child: Text(
-                          'Batal',
-                          style: Theme.of(
-                            context,
-                          ).textTheme.bodyMedium?.copyWith(
-                            color: AppColors.textSecondary,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: NeumorphicButton(
-                        onPressed: () {
-                          Navigator.pop(context);
-                          _showBuyBooksPage(context);
-                        },
-                        gradientColors: AppColors.primaryGradient,
-                        child: Text(
-                          'Lanjutkan',
-                          style: Theme.of(
-                            context,
-                          ).textTheme.bodyMedium?.copyWith(
-                            color: AppColors.textLight,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-        );
-      },
-    );
-  }
-
-  void _showBuyBooksPage(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return Dialog(
-          backgroundColor: Colors.transparent,
-          child: Container(
-            padding: const EdgeInsets.all(24),
-            decoration: AppTheme.neumorphismDecoration(
-              borderRadius: 20,
-              intensity: 1.2,
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Icon(
-                  Icons.auto_stories,
-                  size: 60,
-                  color: AppColors.primary,
-                ),
-                const SizedBox(height: 16),
-                Text(
-                  'Toko Buku AR',
-                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                    color: AppColors.primary,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                const SizedBox(height: 12),
-                Text(
-                  'Fitur ini akan tersedia segera!\nTerima kasih atas minatnya.',
-                  textAlign: TextAlign.center,
-                  style: Theme.of(context).textTheme.bodyMedium,
-                ),
-                const SizedBox(height: 20),
-                NeumorphicButton(
-                  onPressed: () => Navigator.pop(context),
-                  gradientColors: AppColors.primaryGradient,
-                  child: Text(
-                    'Tutup',
-                    style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                      color: AppColors.textLight,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        );
-      },
     );
   }
 
@@ -843,5 +860,324 @@ class _ARDetailPageState extends State<ARDetailPage>
     if (title.contains('Bajak Laut')) return Icons.directions_boat;
     if (title.contains('Sains')) return Icons.science;
     return Icons.play_circle_filled;
+  }
+}
+
+// Enhanced Neomorphic Button Widget
+class _NeomorphicButton extends StatefulWidget {
+  final Widget child;
+  final VoidCallback? onPressed;
+  final double? width;
+  final double? height;
+  final double size;
+
+  const _NeomorphicButton({
+    required this.child,
+    this.onPressed,
+    this.width,
+    this.height,
+    this.size = 48,
+  });
+
+  @override
+  State<_NeomorphicButton> createState() => _NeomorphicButtonState();
+}
+
+class _NeomorphicButtonState extends State<_NeomorphicButton> {
+  bool _isPressed = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTapDown:
+          widget.onPressed != null
+              ? (_) => setState(() => _isPressed = true)
+              : null,
+      onTapUp:
+          widget.onPressed != null
+              ? (_) => setState(() => _isPressed = false)
+              : null,
+      onTapCancel:
+          widget.onPressed != null
+              ? () => setState(() => _isPressed = false)
+              : null,
+      onTap: () {
+        if (widget.onPressed != null) {
+          debugPrint('NeomorphicButton tapped');
+          widget.onPressed!();
+        }
+      },
+      child: AnimatedScale(
+        scale: _isPressed ? 0.95 : 1.0,
+        duration: const Duration(milliseconds: 100),
+        curve: Curves.easeInOut,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 150),
+          width: widget.width ?? widget.size,
+          height: widget.height ?? widget.size,
+          decoration: BoxDecoration(
+            color: _isPressed ? Colors.grey.shade200 : Colors.grey.shade100,
+            borderRadius: BorderRadius.circular(
+              widget.width != null ? 20 : widget.size / 2,
+            ),
+            boxShadow:
+                _isPressed
+                    ? [
+                      BoxShadow(
+                        color: Colors.grey.shade400,
+                        offset: const Offset(2, 2),
+                        blurRadius: 4,
+                        spreadRadius: -1,
+                      ),
+                    ]
+                    : [
+                      BoxShadow(
+                        color: Colors.grey.shade400,
+                        offset: const Offset(4, 4),
+                        blurRadius: 8,
+                        spreadRadius: 0,
+                      ),
+                      BoxShadow(
+                        color: Colors.white,
+                        offset: const Offset(-4, -4),
+                        blurRadius: 8,
+                        spreadRadius: 0,
+                      ),
+                    ],
+          ),
+          child:
+              widget.onPressed != null
+                  ? Center(child: widget.child)
+                  : Opacity(opacity: 0.5, child: Center(child: widget.child)),
+        ),
+      ),
+    );
+  }
+}
+
+// WAJIB: Enhanced Book Confirmation Popup (Langkah 1)
+class _BookConfirmationPopup extends StatelessWidget {
+  final VoidCallback onHaveBook;
+  final VoidCallback onNeedBook;
+
+  const _BookConfirmationPopup({
+    required this.onHaveBook,
+    required this.onNeedBook,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Dialog(
+      backgroundColor: Colors.transparent,
+      elevation: 0,
+      child: Container(
+        padding: const EdgeInsets.all(28),
+        decoration: BoxDecoration(
+          color: Colors.grey.shade100,
+          borderRadius: BorderRadius.circular(24),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.grey.shade400,
+              offset: const Offset(6, 6),
+              blurRadius: 12,
+            ),
+            BoxShadow(
+              color: Colors.white,
+              offset: const Offset(-6, -6),
+              blurRadius: 12,
+            ),
+          ],
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              Icons.menu_book_rounded,
+              size: 56,
+              color: Colors.orange.shade600,
+            ),
+            const SizedBox(height: 20),
+            Text(
+              'Apakah Anda sudah memiliki bukunya?',
+              style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                color: Colors.black87,
+                fontWeight: FontWeight.bold,
+                fontSize: 20,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 36),
+            Row(
+              children: [
+                Expanded(
+                  child: _NeomorphicButton(
+                    height: 52,
+                    onPressed: () {
+                      debugPrint('Ya button pressed');
+                      onHaveBook();
+                    },
+                    child: const Text(
+                      'Ya',
+                      style: TextStyle(
+                        color: Colors.black54,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 17,
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 20),
+                Expanded(
+                  child: _NeomorphicButton(
+                    height: 52,
+                    onPressed: () {
+                      debugPrint('Belum button pressed');
+                      onNeedBook();
+                    },
+                    child: const Text(
+                      'Belum',
+                      style: TextStyle(
+                        color: Colors.black54,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 17,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// WAJIB: Enhanced Marketplace Popup (Langkah 2)
+class _MarketplacePopup extends StatelessWidget {
+  final VoidCallback onClose;
+
+  const _MarketplacePopup({required this.onClose});
+
+  @override
+  Widget build(BuildContext context) {
+    return Dialog(
+      backgroundColor: Colors.transparent,
+      elevation: 0,
+      child: Container(
+        padding: const EdgeInsets.all(28),
+        decoration: BoxDecoration(
+          color: Colors.grey.shade100,
+          borderRadius: BorderRadius.circular(24),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.grey.shade400,
+              offset: const Offset(6, 6),
+              blurRadius: 12,
+            ),
+            BoxShadow(
+              color: Colors.white,
+              offset: const Offset(-6, -6),
+              blurRadius: 12,
+            ),
+          ],
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              Icons.shopping_cart_rounded,
+              size: 56,
+              color: Colors.blue.shade600,
+            ),
+            const SizedBox(height: 20),
+            Text(
+              'Dapatkan bukunya melalui marketplace partner kami:',
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                color: Colors.black87,
+                fontWeight: FontWeight.bold,
+                fontSize: 18,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 28),
+            _NeomorphicButton(
+              width: double.infinity,
+              height: 52,
+              onPressed: () {
+                debugPrint('Tokopedia button pressed');
+                // TODO: Open Tokopedia link
+                onClose();
+              },
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.shopping_bag,
+                    color: Colors.green.shade600,
+                    size: 22,
+                  ),
+                  const SizedBox(width: 10),
+                  const Text(
+                    'Beli di Tokopedia',
+                    style: TextStyle(
+                      color: Colors.black54,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 17,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 18),
+            _NeomorphicButton(
+              width: double.infinity,
+              height: 52,
+              onPressed: () {
+                debugPrint('Shopee button pressed');
+                // TODO: Open Shopee link
+                onClose();
+              },
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.shopping_cart,
+                    color: Colors.orange.shade600,
+                    size: 22,
+                  ),
+                  const SizedBox(width: 10),
+                  const Text(
+                    'Beli di Shopee',
+                    style: TextStyle(
+                      color: Colors.black54,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 17,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 18),
+            _NeomorphicButton(
+              width: double.infinity,
+              height: 48,
+              onPressed: () {
+                debugPrint('Tutup button pressed');
+                onClose();
+              },
+              child: const Text(
+                'Tutup',
+                style: TextStyle(
+                  color: Colors.black54,
+                  fontWeight: FontWeight.w500,
+                  fontSize: 16,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }
