@@ -696,13 +696,13 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Container(
-            height: 70,
+            height: 55,
             margin: const EdgeInsets.only(top: 8, bottom: 20),
             child: ListView.builder(
               scrollDirection: Axis.horizontal,
               itemCount: AppConstants.categories.length,
               physics: const BouncingScrollPhysics(),
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
               itemBuilder: (context, index) {
                 final category = AppConstants.categories[index];
                 final isSelected = selectedCategory == category;
@@ -720,11 +720,11 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                             ? AppColors.primary
                             : AppColors.backgroundLight.withOpacity(0.1),
                     elevation: 6.0,
-                    borderRadius: 25,
+                    borderRadius: 20,
                     use3DEffect: true,
                     padding: const EdgeInsets.symmetric(
-                      horizontal: 20,
-                      vertical: 12,
+                      horizontal: 16,
+                      vertical: 8,
                     ),
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
@@ -735,9 +735,9 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                               isSelected
                                   ? AppColors.textLight
                                   : AppColors.primary,
-                          size: 16,
+                          size: 14,
                         ),
-                        const SizedBox(width: 8),
+                        const SizedBox(width: 6),
                         Text(
                           category,
                           style: GoogleFonts.nunito(
@@ -746,7 +746,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                                     ? AppColors.textLight
                                     : AppColors.primary,
                             fontWeight: FontWeight.w600,
-                            fontSize: 16,
+                            fontSize: 14,
                           ),
                         ),
                       ],
