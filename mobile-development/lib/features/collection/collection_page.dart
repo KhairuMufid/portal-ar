@@ -80,8 +80,8 @@ class _CollectionPageState extends State<CollectionPage>
           CustomScrollView(
             physics: const BouncingScrollPhysics(),
             slivers: [
-              // Header
-              _buildHeaderSliver(),
+              // Sticky Search Bar sebagai elemen teratas
+              _buildStickySearchBarSliver(),
 
               // Filter Kategori
               _buildCategoryFilterSliver(),
@@ -179,38 +179,58 @@ class _CollectionPageState extends State<CollectionPage>
     ];
   }
 
-  Widget _buildHeaderSliver() {
-    return SliverToBoxAdapter(
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(20, 60, 20, 20),
-        child: NeumorphicButton(
-          onPressed: () {},
-          elevation: 8,
-          borderRadius: 20,
-          padding: EdgeInsets.zero,
-          child: Container(
-            height: 56,
-            decoration: BoxDecoration(
-              color: AppColors.backgroundLight.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(20),
+  Widget _buildStickySearchBarSliver() {
+    return SliverPersistentHeader(
+      pinned: true,
+      delegate: StickySearchBarDelegate(
+        child: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors:
+                  AppColors.backgroundGradient
+                      .map((color) => color.withOpacity(0.8))
+                      .toList(),
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
             ),
-            child: TextField(
-              decoration: InputDecoration(
-                hintText: 'Cari konten AR mu...',
-                hintStyle: GoogleFonts.nunito(
-                  color: AppColors.textSecondary.withOpacity(0.7),
-                  fontSize: 16,
+          ),
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(20, 50, 20, 20),
+            child: NeumorphicButton(
+              onPressed: () {},
+              elevation: 8,
+              borderRadius: 20,
+              padding: EdgeInsets.zero,
+              child: Container(
+                height: 56,
+                decoration: BoxDecoration(
+                  color: AppColors.backgroundLight.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(20),
                 ),
-                prefixIcon: Container(
-                  width: 64,
-                  height: 64,
-                  padding: const EdgeInsets.all(16),
-                  child: Icon(Icons.search, color: AppColors.primary, size: 24),
-                ),
-                border: InputBorder.none,
-                contentPadding: const EdgeInsets.symmetric(
-                  horizontal: 20,
-                  vertical: 16,
+                child: TextField(
+                  decoration: InputDecoration(
+                    hintText: 'Cari konten AR mu...',
+                    hintStyle: GoogleFonts.nunito(
+                      color: AppColors.textSecondary.withOpacity(0.7),
+                      fontSize: 16,
+                      fontWeight: FontWeight.w500,
+                    ),
+                    prefixIcon: const Icon(
+                      Icons.search,
+                      color: AppColors.primary,
+                      size: 24,
+                    ),
+                    border: InputBorder.none,
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 16,
+                    ),
+                  ),
+                  style: GoogleFonts.nunito(
+                    color: AppColors.textPrimary,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w500,
+                  ),
                 ),
               ),
             ),
@@ -576,5 +596,32 @@ class _CollectionPageState extends State<CollectionPage>
         ],
       ),
     );
+  }
+}
+
+// Helper class untuk SliverPersistentHeader
+class StickySearchBarDelegate extends SliverPersistentHeaderDelegate {
+  final Widget child;
+
+  StickySearchBarDelegate({required this.child});
+
+  @override
+  double get minExtent => 126; // Height minimum saat sticky (50 top + 56 search + 20 bottom)
+
+  @override
+  double get maxExtent => 126; // Height maximum
+
+  @override
+  Widget build(
+    BuildContext context,
+    double shrinkOffset,
+    bool overlapsContent,
+  ) {
+    return child;
+  }
+
+  @override
+  bool shouldRebuild(covariant SliverPersistentHeaderDelegate oldDelegate) {
+    return false;
   }
 }

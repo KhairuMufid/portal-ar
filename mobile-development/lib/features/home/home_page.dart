@@ -82,8 +82,8 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
               // Simple Header dengan Welcome Text
               _buildWelcomeHeaderSliver(),
 
-              // Search Bar Section
-              _buildSearchBarSliver(),
+              // Search Bar Section (Sticky)
+              _buildStickySearchBarSliver(),
 
               // AR Baru Featured Section
               _buildNewARFeaturedSliver(),
@@ -191,7 +191,17 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Welcome text
+            // Logo di center
+            Container(
+              alignment: Alignment.center,
+              child: Image.asset(
+                'assets/images/kooka-logo.png',
+                height: 45, // Ukuran diperbesar dari 28 ke 45
+                fit: BoxFit.contain,
+              ),
+            ),
+            const SizedBox(height: 40), // Margin diperbesar dari 20 ke 32
+            // Welcome text (rata kiri)
             ShaderMask(
               shaderCallback:
                   (bounds) => LinearGradient(
@@ -199,6 +209,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                   ).createShader(bounds),
               child: Text(
                 'Selamat Datang di Portal AR',
+                textAlign: TextAlign.left,
                 style: GoogleFonts.nunito(
                   fontSize: 30,
                   fontWeight: FontWeight.w900,
@@ -208,67 +219,15 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
             ),
             const SizedBox(height: 12),
 
-            // Logo
-            Container(
-              alignment: Alignment.centerLeft,
-              child: Image.asset(
-                'assets/images/kooka-logo.png',
-                height: 28,
-                fit: BoxFit.contain,
-              ),
-            ),
-            const SizedBox(height: 12),
-
             Text(
               'Jelajahi dunia Augmented Reality yang menakjubkan!',
+              textAlign: TextAlign.left,
               style: GoogleFonts.nunito(
                 fontSize: 16,
                 color: AppColors.textSecondary,
               ),
             ),
-            const SizedBox(height: 12),
           ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildSearchBarSliver() {
-    return SliverToBoxAdapter(
-      child: Padding(
-        padding: const EdgeInsets.all(20.0),
-        child: NeumorphicButton(
-          onPressed: () {},
-          elevation: 8,
-          borderRadius: 20,
-          padding: EdgeInsets.zero,
-          child: Container(
-            height: 56,
-            decoration: BoxDecoration(
-              color: AppColors.backgroundLight.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: TextField(
-              decoration: InputDecoration(
-                hintText: 'Cari mainan AR favoritmu...',
-                hintStyle: GoogleFonts.nunito(
-                  color: AppColors.textSecondary.withOpacity(0.7),
-                  fontSize: 16,
-                ),
-                prefixIcon: Container(
-                  width: 64,
-                  height: 64,
-                  padding: const EdgeInsets.all(16),
-                  child: Icon(Icons.search, color: AppColors.primary, size: 24),
-                ),
-                border: InputBorder.none,
-                contentPadding: const EdgeInsets.symmetric(
-                  horizontal: 20,
-                  vertical: 16,
-                ),
-              ),
-            ),
-          ),
         ),
       ),
     );
@@ -792,5 +751,92 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
       default:
         return Icons.category;
     }
+  }
+
+  Widget _buildStickySearchBarSliver() {
+    return SliverPersistentHeader(
+      pinned: true, // Ini yang membuat sticky
+      delegate: StickySearchBarDelegate(
+        child: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors:
+                  AppColors.backgroundGradient
+                      .map((color) => color.withOpacity(0.8))
+                      .toList(),
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+            ),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(20, 50, 20, 20),
+            child: NeumorphicButton(
+              onPressed: () {},
+              elevation: 8,
+              borderRadius: 20,
+              padding: EdgeInsets.zero,
+              child: Container(
+                height: 56,
+                decoration: BoxDecoration(
+                  color: AppColors.backgroundLight.withOpacity(0.9),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: TextField(
+                  decoration: InputDecoration(
+                    hintText: 'Cari mainan AR favoritmu...',
+                    hintStyle: GoogleFonts.nunito(
+                      color: AppColors.textSecondary.withOpacity(0.7),
+                      fontSize: 16,
+                    ),
+                    prefixIcon: Container(
+                      width: 64,
+                      height: 64,
+                      padding: const EdgeInsets.all(16),
+                      child: Icon(
+                        Icons.search,
+                        color: AppColors.primary,
+                        size: 24,
+                      ),
+                    ),
+                    border: InputBorder.none,
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 20,
+                      vertical: 16,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// Helper class untuk SliverPersistentHeader
+class StickySearchBarDelegate extends SliverPersistentHeaderDelegate {
+  final Widget child;
+
+  StickySearchBarDelegate({required this.child});
+
+  @override
+  double get minExtent => 126; // Height minimum saat sticky (50 top + 56 search + 20 bottom)
+
+  @override
+  double get maxExtent => 126; // Height maximum
+
+  @override
+  Widget build(
+    BuildContext context,
+    double shrinkOffset,
+    bool overlapsContent,
+  ) {
+    return child;
+  }
+
+  @override
+  bool shouldRebuild(covariant SliverPersistentHeaderDelegate oldDelegate) {
+    return false;
   }
 }
