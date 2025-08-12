@@ -18,6 +18,7 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
   late PageController _pageController;
   late List<AnimationController> _iconControllers;
   late List<Animation<double>> _iconAnimations;
+  bool _isAnimatingToPage = false; // Flag untuk mencegah konflik onPageChanged
 
   final List<Widget> _pages = [
     const HomePage(),
@@ -75,6 +76,8 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
   void _onNavTap(int index) {
     if (index == _currentIndex) return;
 
+    _isAnimatingToPage = true; // Set flag sebelum animasi
+
     setState(() {
       _currentIndex = index;
     });
@@ -83,7 +86,10 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
       index,
       duration: AppConstants.mediumAnimation,
       curve: Curves.easeInOut,
-    );
+    ).then((_) {
+      // Reset flag setelah animasi selesai
+      _isAnimatingToPage = false;
+    });
 
     // Animate icons
     for (int i = 0; i < _iconControllers.length; i++) {
@@ -102,16 +108,19 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
       body: PageView(
         controller: _pageController,
         onPageChanged: (index) {
-          setState(() {
-            _currentIndex = index;
-          });
+          // Hanya update state jika bukan animasi manual dari tap
+          if (!_isAnimatingToPage) {
+            setState(() {
+              _currentIndex = index;
+            });
 
-          // Animate icons when page changes via swipe
-          for (int i = 0; i < _iconControllers.length; i++) {
-            if (i == index) {
-              _iconControllers[i].forward();
-            } else {
-              _iconControllers[i].reverse();
+            // Animate icons when page changes via swipe
+            for (int i = 0; i < _iconControllers.length; i++) {
+              if (i == index) {
+                _iconControllers[i].forward();
+              } else {
+                _iconControllers[i].reverse();
+              }
             }
           }
         },
@@ -169,10 +178,23 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
               ],
             ),
             child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: List.generate(_icons.length, (index) {
-                return _buildFloatingNavItem(index);
-              }),
+              children: [
+                // Home menu - positioned to the left
+                Expanded(
+                  flex: 1,
+                  child: Center(child: _buildFloatingNavItem(0)),
+                ),
+                // Collection menu - perfectly centered
+                Expanded(
+                  flex: 1,
+                  child: Center(child: _buildFloatingNavItem(1)),
+                ),
+                // Settings menu - positioned to the right
+                Expanded(
+                  flex: 1,
+                  child: Center(child: _buildFloatingNavItem(2)),
+                ),
+              ],
             ),
           ),
         ),
