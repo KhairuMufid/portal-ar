@@ -40,6 +40,12 @@ class _ARDetailPageState extends State<ARDetailPage>
   static const double _horizontalPadding = 24.0;
   static const double _carouselFixedHeight = 300.0;
 
+  // Tambah palet oranye terpusat untuk konsistensi
+  static const Color _oPrimary = Color(0xFFFF8A00); // Orange
+  static const Color _oSecondary = Color(0xFFFFB74D); // Orange 300
+  static const Color _oTertiary = Color(0xFFFFE0B2); // Orange 100
+  static const Color _oBgLight = Color(0xFFFFF3E0); // Orange 50
+
   final List<String> _carouselImages = [
     'assets/images/sample1.jpg',
     'assets/images/sample2.jpg',
@@ -234,16 +240,15 @@ class _ARDetailPageState extends State<ARDetailPage>
 
   Widget _buildFullScreenARPreview(ARContent content) {
     return Container(
-      // TEMA: Background gradient yang cocok dengan portal AR anak-anak
       decoration: BoxDecoration(
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
-            const Color(0xFF6A5ACD).withOpacity(0.8), // Purple yang lembut
-            const Color(0xFF87CEEB).withOpacity(0.6), // Sky blue
-            const Color(0xFF98FB98).withOpacity(0.4), // Pale green
-            const Color(0xFFFFE4E1).withOpacity(0.3), // Misty rose
+            _oPrimary.withOpacity(0.85),
+            _oSecondary.withOpacity(0.7),
+            _oTertiary.withOpacity(0.55),
+            _oBgLight.withOpacity(0.4),
           ],
         ),
       ),
@@ -284,8 +289,8 @@ class _ARDetailPageState extends State<ARDetailPage>
                   end: Alignment.bottomCenter,
                   colors: [
                     Colors.transparent,
-                    Colors.white.withOpacity(0.3),
-                    Colors.white.withOpacity(0.7),
+                    _oBgLight.withOpacity(0.6),
+                    Colors.white.withOpacity(0.85),
                   ],
                 ),
               ),
@@ -309,11 +314,11 @@ class _ARDetailPageState extends State<ARDetailPage>
               width: 60,
               height: 60,
               decoration: BoxDecoration(
-                color: const Color(0xFFFFB6C1), // Light pink
+                color: _oSecondary, // oranye terang
                 borderRadius: BorderRadius.circular(30),
                 boxShadow: [
                   BoxShadow(
-                    color: const Color(0xFFFFB6C1).withOpacity(0.4),
+                    color: _oSecondary.withOpacity(0.4),
                     blurRadius: 8,
                     offset: const Offset(0, 4),
                   ),
@@ -331,11 +336,11 @@ class _ARDetailPageState extends State<ARDetailPage>
               width: 50,
               height: 50,
               decoration: BoxDecoration(
-                color: const Color(0xFF98FB98), // Pale green
+                color: _oTertiary, // oranye lembut
                 borderRadius: BorderRadius.circular(25),
                 boxShadow: [
                   BoxShadow(
-                    color: const Color(0xFF98FB98).withOpacity(0.4),
+                    color: _oTertiary.withOpacity(0.4),
                     blurRadius: 8,
                     offset: const Offset(0, 4),
                   ),
@@ -353,11 +358,11 @@ class _ARDetailPageState extends State<ARDetailPage>
               width: 70,
               height: 70,
               decoration: BoxDecoration(
-                color: const Color(0xFF87CEEB), // Sky blue
+                color: _oSecondary, // oranye terang
                 borderRadius: BorderRadius.circular(35),
                 boxShadow: [
                   BoxShadow(
-                    color: const Color(0xFF87CEEB).withOpacity(0.4),
+                    color: _oSecondary.withOpacity(0.4),
                     blurRadius: 8,
                     offset: const Offset(0, 4),
                   ),
@@ -444,15 +449,12 @@ class _ARDetailPageState extends State<ARDetailPage>
             gradient: LinearGradient(
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
-              colors: [
-                const Color(0xFF6A5ACD).withOpacity(0.8),
-                const Color(0xFF87CEEB).withOpacity(0.8),
-              ],
+              colors: [_oPrimary, _oSecondary],
             ),
             borderRadius: BorderRadius.circular(20),
             boxShadow: [
               BoxShadow(
-                color: const Color(0xFF6A5ACD).withOpacity(0.3),
+                color: _oPrimary.withOpacity(0.3),
                 blurRadius: 12,
                 offset: const Offset(0, 6),
               ),
@@ -475,10 +477,10 @@ class _ARDetailPageState extends State<ARDetailPage>
               Text(
                 content.title,
                 style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                  color: AppColors.textPrimary,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 28,
-                ),
+                      color: AppColors.textPrimary,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 28,
+                    ),
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
               ),
@@ -490,20 +492,17 @@ class _ARDetailPageState extends State<ARDetailPage>
                 ),
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
-                    colors: [
-                      const Color(0xFFFFE4E1),
-                      const Color(0xFFFFB6C1).withOpacity(0.5),
-                    ],
+                    colors: [_oBgLight, _oTertiary],
                   ),
                   borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: const Color(0xFFFFB6C1), width: 1),
+                  border: Border.all(color: _oSecondary, width: 1),
                 ),
                 child: Text(
                   'Edukasi AR',
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: const Color(0xFF8B4513), // Saddle brown
-                    fontWeight: FontWeight.w600,
-                  ),
+                        color: const Color(0xFF8B4513),
+                        fontWeight: FontWeight.w600,
+                      ),
                 ),
               ),
             ],
@@ -537,7 +536,7 @@ class _ARDetailPageState extends State<ARDetailPage>
             height: 3,
             decoration: BoxDecoration(
               gradient: const LinearGradient(
-                colors: [Color(0xFF6A5ACD), Color(0xFF87CEEB)],
+                colors: [Color(0xFFFF8A00), Color(0xFFFFB74D)],
               ),
               borderRadius: BorderRadius.circular(2),
             ),
@@ -574,14 +573,14 @@ class _ARDetailPageState extends State<ARDetailPage>
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
                       colors: [
-                        const Color(0xFF6A5ACD).withOpacity(0.7),
-                        const Color(0xFF87CEEB).withOpacity(0.7),
-                        const Color(0xFF98FB98).withOpacity(0.5),
+                        _oPrimary.withOpacity(0.8),
+                        _oSecondary.withOpacity(0.8),
+                        _oTertiary.withOpacity(0.6)
                       ],
                     ),
                     boxShadow: [
                       BoxShadow(
-                        color: const Color(0xFF6A5ACD).withOpacity(0.3),
+                        color: _oPrimary.withOpacity(0.3),
                         blurRadius: 15,
                         offset: const Offset(0, 8),
                       ),
@@ -633,24 +632,22 @@ class _ARDetailPageState extends State<ARDetailPage>
                 margin: const EdgeInsets.symmetric(horizontal: 6),
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  gradient:
-                      _currentImageIndex == index
-                          ? const LinearGradient(
-                            colors: [Color(0xFF6A5ACD), Color(0xFF87CEEB)],
-                          )
-                          : null,
+                  gradient: _currentImageIndex == index
+                      ? const LinearGradient(
+                          colors: [Color(0xFFFF8A00), Color(0xFFFFB74D)],
+                        )
+                      : null,
                   color:
                       _currentImageIndex == index ? null : Colors.grey.shade300,
-                  boxShadow:
-                      _currentImageIndex == index
-                          ? [
-                            BoxShadow(
-                              color: const Color(0xFF6A5ACD).withOpacity(0.4),
-                              blurRadius: 8,
-                              offset: const Offset(0, 2),
-                            ),
-                          ]
-                          : null,
+                  boxShadow: _currentImageIndex == index
+                      ? [
+                          BoxShadow(
+                            color: _oPrimary.withOpacity(0.4),
+                            blurRadius: 8,
+                            offset: const Offset(0, 2),
+                          ),
+                        ]
+                      : null,
                 ),
               ),
             ),
@@ -683,7 +680,7 @@ class _ARDetailPageState extends State<ARDetailPage>
             height: 3,
             decoration: BoxDecoration(
               gradient: const LinearGradient(
-                colors: [Color(0xFF6A5ACD), Color(0xFF87CEEB)],
+                colors: [Color(0xFFFF8A00), Color(0xFFFFB74D)],
               ),
               borderRadius: BorderRadius.circular(2),
             ),
@@ -698,21 +695,21 @@ class _ARDetailPageState extends State<ARDetailPage>
               Text(
                 content.description,
                 style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                  height: 1.6,
-                  color: AppColors.textSecondary,
-                  fontSize: 16,
-                  fontWeight: FontWeight.w400,
-                ),
+                      height: 1.6,
+                      color: AppColors.textSecondary,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w400,
+                    ),
               ),
               const SizedBox(height: 16),
               Text(
                 'Game AR interaktif ini menggunakan teknologi Augmented Reality untuk memberikan pengalaman belajar yang menyenangkan dan mendidik untuk anak-anak.',
                 style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                  height: 1.6,
-                  color: AppColors.textSecondary,
-                  fontSize: 16,
-                  fontWeight: FontWeight.w400,
-                ),
+                      height: 1.6,
+                      color: AppColors.textSecondary,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w400,
+                    ),
               ),
             ],
           ),
@@ -762,31 +759,25 @@ class _ARDetailPageState extends State<ARDetailPage>
           width: double.infinity,
           height: 64,
           decoration: BoxDecoration(
-            gradient:
-                onPressed != null
-                    ? const LinearGradient(
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                      colors: [
-                        Color(0xFF6A5ACD),
-                        Color(0xFF87CEEB),
-                        Color(0xFF98FB98),
-                      ],
-                    )
-                    : LinearGradient(
-                      colors: [Colors.grey.shade300, Colors.grey.shade400],
-                    ),
+            gradient: onPressed != null
+                ? LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [_oPrimary, _oSecondary, _oTertiary],
+                  )
+                : LinearGradient(
+                    colors: [Colors.grey.shade300, Colors.grey.shade400],
+                  ),
             borderRadius: BorderRadius.circular(32),
-            boxShadow:
-                onPressed != null
-                    ? [
-                      BoxShadow(
-                        color: const Color(0xFF6A5ACD).withOpacity(0.4),
-                        blurRadius: 15,
-                        offset: const Offset(0, 8),
-                      ),
-                    ]
-                    : null,
+            boxShadow: onPressed != null
+                ? [
+                    BoxShadow(
+                      color: _oPrimary.withOpacity(0.4),
+                      blurRadius: 15,
+                      offset: const Offset(0, 8),
+                    ),
+                  ]
+                : null,
           ),
           child: Material(
             color: Colors.transparent,
@@ -852,8 +843,8 @@ class _ARDetailPageState extends State<ARDetailPage>
                     _openARViewer(context, content.id);
                   } else {
                     context.read<ARContentProvider>().downloadContent(
-                      content.id,
-                    );
+                          content.id,
+                        );
                   }
                 }
               },
@@ -907,9 +898,9 @@ class _ARDetailPageState extends State<ARDetailPage>
             Text(
               'Konten Tidak Ditemukan',
               style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                color: AppColors.textPrimary,
-                fontWeight: FontWeight.bold,
-              ),
+                    color: AppColors.textPrimary,
+                    fontWeight: FontWeight.bold,
+                  ),
             ),
             const SizedBox(height: 16),
             Container(
@@ -996,7 +987,7 @@ class _BookConfirmationPopup extends StatelessWidget {
           borderRadius: BorderRadius.circular(24),
           boxShadow: [
             BoxShadow(
-              color: const Color(0xFF6A5ACD).withOpacity(0.3),
+              color: const Color(0xFFFF8A00).withOpacity(0.3),
               blurRadius: 20,
               offset: const Offset(0, 10),
             ),
@@ -1008,11 +999,11 @@ class _BookConfirmationPopup extends StatelessWidget {
             Container(
               width: 80,
               height: 80,
-              decoration: BoxDecoration(
-                gradient: const LinearGradient(
-                  colors: [Color(0xFF6A5ACD), Color(0xFF87CEEB)],
+              decoration: const BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [Color(0xFFFF8A00), Color(0xFFFFB74D)],
                 ),
-                borderRadius: BorderRadius.circular(40),
+                shape: BoxShape.circle, // Ubah dari borderRadius ke shape
               ),
               child: const Icon(
                 Icons.menu_book_rounded,
@@ -1024,20 +1015,20 @@ class _BookConfirmationPopup extends StatelessWidget {
             Text(
               'Untuk bermain game AR ini, Anda memerlukan buku fisik sebagai marker.',
               style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                color: Colors.black87,
-                fontSize: 16,
-                height: 1.4,
-              ),
+                    color: Colors.black87,
+                    fontSize: 16,
+                    height: 1.4,
+                  ),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 20),
             Text(
               'Apakah Anda sudah memiliki bukunya?',
               style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                color: Colors.black87,
-                fontWeight: FontWeight.bold,
-                fontSize: 20,
-              ),
+                    color: Colors.black87,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 20,
+                  ),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 36),
@@ -1084,7 +1075,7 @@ class _MarketplacePopup extends StatelessWidget {
           borderRadius: BorderRadius.circular(24),
           boxShadow: [
             BoxShadow(
-              color: const Color(0xFF6A5ACD).withOpacity(0.3),
+              color: const Color(0xFFFF8A00).withOpacity(0.3),
               blurRadius: 20,
               offset: const Offset(0, 10),
             ),
@@ -1096,11 +1087,11 @@ class _MarketplacePopup extends StatelessWidget {
             Container(
               width: 80,
               height: 80,
-              decoration: BoxDecoration(
-                gradient: const LinearGradient(
-                  colors: [Color(0xFF6A5ACD), Color(0xFF87CEEB)],
+              decoration: const BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [Color(0xFFFF8A00), Color(0xFFFFB74D)],
                 ),
-                borderRadius: BorderRadius.circular(40),
+                shape: BoxShape.circle, // Ubah dari borderRadius ke shape
               ),
               child: const Icon(
                 Icons.shopping_cart_rounded,
@@ -1112,10 +1103,10 @@ class _MarketplacePopup extends StatelessWidget {
             Text(
               'Dapatkan bukunya melalui marketplace partner kami:',
               style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                color: Colors.black87,
-                fontWeight: FontWeight.bold,
-                fontSize: 18,
-              ),
+                    color: Colors.black87,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 18,
+                  ),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 28),
@@ -1170,28 +1161,25 @@ class _ThemedButton extends StatelessWidget {
       width: fullWidth ? double.infinity : null,
       height: 52,
       decoration: BoxDecoration(
-        gradient:
-            isPrimary
-                ? const LinearGradient(
-                  colors: [Color(0xFF6A5ACD), Color(0xFF87CEEB)],
-                )
-                : null,
+        gradient: isPrimary
+            ? const LinearGradient(
+                colors: [Color(0xFFFF8A00), Color(0xFFFFB74D)],
+              )
+            : null,
         color: isPrimary ? null : Colors.grey.shade100,
         borderRadius: BorderRadius.circular(26),
-        border:
-            isPrimary
-                ? null
-                : Border.all(color: Colors.grey.shade300, width: 1),
-        boxShadow:
-            isPrimary
-                ? [
-                  BoxShadow(
-                    color: const Color(0xFF6A5ACD).withOpacity(0.3),
-                    blurRadius: 8,
-                    offset: const Offset(0, 4),
-                  ),
-                ]
-                : null,
+        border: isPrimary
+            ? null
+            : Border.all(color: Colors.grey.shade300, width: 1),
+        boxShadow: isPrimary
+            ? [
+                BoxShadow(
+                  color: const Color(0xFFFF8A00).withOpacity(0.3),
+                  blurRadius: 8,
+                  offset: const Offset(0, 4),
+                ),
+              ]
+            : null,
       ),
       child: Material(
         color: Colors.transparent,
