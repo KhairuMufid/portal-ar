@@ -34,18 +34,12 @@ class _ARDetailPageState extends State<ARDetailPage>
   int _currentImageIndex = 0;
   ScrollController _scrollController = ScrollController();
 
-  // BARU: State untuk visibility tombol back berdasarkan background visibility
   bool _showBackButton = true;
-
-  // KONSTANTA: Threshold untuk menentukan kapan background terlihat
   late double _backgroundVisibilityThreshold;
 
-  // Konstanta untuk konsistensi padding
   static const double _horizontalPadding = 24.0;
   static const double _carouselFixedHeight = 300.0;
-  static const double _carouselImageHeight = 260.0;
 
-  // Sample images for carousel
   final List<String> _carouselImages = [
     'assets/images/sample1.jpg',
     'assets/images/sample2.jpg',
@@ -104,12 +98,10 @@ class _ARDetailPageState extends State<ARDetailPage>
       curve: Curves.easeInOut,
     );
 
-    // BARU: Listener untuk background visibility
     _scrollController.addListener(_handleScrollForBackgroundVisibility);
 
-    // Start animations
     _heroController.forward();
-    _backButtonController.forward(); // Start dengan tombol visible
+    _backButtonController.forward();
     Future.delayed(const Duration(milliseconds: 300), () {
       if (mounted) {
         _contentController.forward();
@@ -125,38 +117,23 @@ class _ARDetailPageState extends State<ARDetailPage>
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    // HITUNG: Threshold berdasarkan ukuran layar
-    // Background terlihat ketika scroll offset < 40% dari tinggi layar
     _backgroundVisibilityThreshold = MediaQuery.of(context).size.height * 0.25;
   }
 
-  // BARU: Handler untuk mengontrol tombol back berdasarkan visibility background
   void _handleScrollForBackgroundVisibility() {
     final double currentOffset = _scrollController.offset;
 
-    // LOGIKA BARU:
-    // - Background TERLIHAT (scroll offset kecil) -> SHOW button
-    // - Background TIDAK TERLIHAT (panel mengisi layar) -> HIDE button
-
     if (currentOffset <= _backgroundVisibilityThreshold && !_showBackButton) {
-      // Background AR terlihat -> Show tombol back
       setState(() {
         _showBackButton = true;
       });
       _backButtonController.forward();
-      debugPrint(
-        'Back button shown - AR background visible (offset: ${currentOffset.toStringAsFixed(1)})',
-      );
     } else if (currentOffset > _backgroundVisibilityThreshold &&
         _showBackButton) {
-      // Panel konten mengisi layar -> Hide tombol back
       setState(() {
         _showBackButton = false;
       });
       _backButtonController.reverse();
-      debugPrint(
-        'Back button hidden - content panel covers screen (offset: ${currentOffset.toStringAsFixed(1)})',
-      );
     }
   }
 
@@ -185,13 +162,8 @@ class _ARDetailPageState extends State<ARDetailPage>
 
           return Stack(
             children: [
-              // LAPISAN BELAKANG: Latar Belakang AR
               _buildBackgroundLayer(context, content),
-
-              // LAPISAN DEPAN: Panel Konten Putih (SCROLLABLE)
               _buildScrollableContentLayer(context, content),
-
-              // LAPISAN ATAS: Tombol kembali dengan animasi berdasarkan background visibility
               _buildAnimatedBackButton(context),
             ],
           );
@@ -200,29 +172,23 @@ class _ARDetailPageState extends State<ARDetailPage>
     );
   }
 
-  // LAPISAN BELAKANG: AR Background (tanpa tombol back)
   Widget _buildBackgroundLayer(BuildContext context, ARContent content) {
     return Positioned.fill(child: _buildFullScreenARPreview(content));
   }
 
-  // LAPISAN DEPAN: Scrollable Content Layer
   Widget _buildScrollableContentLayer(BuildContext context, ARContent content) {
     return CustomScrollView(
       controller: _scrollController,
       physics: const ClampingScrollPhysics(),
       slivers: [
-        // SPACER: Area untuk background AR (45% tinggi layar)
         SliverToBoxAdapter(
           child: SizedBox(height: MediaQuery.of(context).size.height * 0.45),
         ),
-
-        // PANEL KONTEN: Mulai dari 45% tinggi layar
         SliverToBoxAdapter(child: _buildMainContentPanel(context, content)),
       ],
     );
   }
 
-  // TOMBOL BACK: Dengan animasi berdasarkan background visibility
   Widget _buildAnimatedBackButton(BuildContext context) {
     return Positioned(
       top: MediaQuery.of(context).padding.top + 20,
@@ -234,57 +200,55 @@ class _ARDetailPageState extends State<ARDetailPage>
           child: Material(
             color: Colors.transparent,
             child: Container(
+              width: 56,
+              height: 56,
               decoration: BoxDecoration(
+                color: Colors.white,
                 borderRadius: BorderRadius.circular(28),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.2),
-                    blurRadius: 12,
+                    color: Colors.black.withOpacity(0.1),
+                    blurRadius: 10,
                     offset: const Offset(0, 4),
                   ),
                 ],
               ),
-              child: _NeomorphicButton(
-                size: 56,
-                onPressed: () {
-                  debugPrint(
-                    'Back button pressed - Background visibility based',
-                  );
-                  Navigator.pop(context);
-                },
-                child: const Icon(
-                  Icons.arrow_back,
-                  color: Colors.black54,
-                  size: 24,
+              child: Material(
+                color: Colors.transparent,
+                child: InkWell(
+                  borderRadius: BorderRadius.circular(28),
+                  onTap: () => Navigator.pop(context),
+                  child: const Icon(
+                    Icons.arrow_back,
+                    color: AppColors.textPrimary,
+                    size: 24,
+                  ),
                 ),
               ),
             ),
           ),
         ),
-      ),
-    );
+      );
   }
 
   Widget _buildFullScreenARPreview(ARContent content) {
     return Container(
+      // TEMA: Background gradient yang cocok dengan portal AR anak-anak
       decoration: BoxDecoration(
-        gradient: RadialGradient(
-          center: Alignment.center,
-          radius: 1.5,
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
           colors: [
-            AppColors.primary.withOpacity(0.3),
-            AppColors.skyBlue.withOpacity(0.2),
-            AppColors.leafGreen.withOpacity(0.1),
-            AppColors.primary.withOpacity(0.4),
+            const Color(0xFF6A5ACD).withOpacity(0.8), // Purple yang lembut
+            const Color(0xFF87CEEB).withOpacity(0.6), // Sky blue
+            const Color(0xFF98FB98).withOpacity(0.4), // Pale green
+            const Color(0xFFFFE4E1).withOpacity(0.3), // Misty rose
           ],
         ),
       ),
       child: Stack(
         children: [
-          // Animated 3D elements
           _buildFloating3DElements(),
-
-          // Central AR preview icon
           Center(
             child: ScaleTransition(
               scale: _heroAnimation,
@@ -295,20 +259,18 @@ class _ARDetailPageState extends State<ARDetailPage>
                   color: Colors.white.withOpacity(0.2),
                   shape: BoxShape.circle,
                   border: Border.all(
-                    color: Colors.white.withOpacity(0.3),
-                    width: 2,
+                    color: Colors.white.withOpacity(0.4),
+                    width: 3,
                   ),
                 ),
                 child: Icon(
                   _getIconForContent(content.title),
                   size: 100,
-                  color: Colors.white.withOpacity(0.8),
+                  color: Colors.white,
                 ),
               ),
             ),
           ),
-
-          // Gradient overlay untuk transisi ke konten
           Positioned(
             bottom: 0,
             left: 0,
@@ -321,8 +283,8 @@ class _ARDetailPageState extends State<ARDetailPage>
                   end: Alignment.bottomCenter,
                   colors: [
                     Colors.transparent,
-                    Colors.white.withOpacity(0.1),
                     Colors.white.withOpacity(0.3),
+                    Colors.white.withOpacity(0.7),
                   ],
                 ),
               ),
@@ -333,74 +295,70 @@ class _ARDetailPageState extends State<ARDetailPage>
     );
   }
 
+  // TEMA: Elemen 3D dengan warna yang ceria dan ramah anak
   Widget _buildFloating3DElements() {
     return Stack(
       children: [
-        // Floating element 1
         Positioned(
-          top: 120,
-          left: 50,
+          top: 100,
+          left: 40,
           child: ScaleTransition(
             scale: _contentAnimation,
             child: Container(
               width: 60,
               height: 60,
               decoration: BoxDecoration(
-                color: AppColors.skyBlue.withOpacity(0.4),
+                color: const Color(0xFFFFB6C1), // Light pink
                 borderRadius: BorderRadius.circular(30),
                 boxShadow: [
                   BoxShadow(
-                    color: AppColors.skyBlue.withOpacity(0.3),
-                    blurRadius: 20,
-                    offset: const Offset(0, 10),
+                    color: const Color(0xFFFFB6C1).withOpacity(0.4),
+                    blurRadius: 8,
+                    offset: const Offset(0, 4),
                   ),
                 ],
               ),
             ),
           ),
         ),
-
-        // Floating element 2
         Positioned(
-          top: 250,
-          right: 80,
+          top: 180,
+          right: 60,
           child: FadeTransition(
             opacity: _contentAnimation,
             child: Container(
-              width: 40,
-              height: 40,
+              width: 50,
+              height: 50,
               decoration: BoxDecoration(
-                color: AppColors.leafGreen.withOpacity(0.4),
-                borderRadius: BorderRadius.circular(20),
+                color: const Color(0xFF98FB98), // Pale green
+                borderRadius: BorderRadius.circular(25),
                 boxShadow: [
                   BoxShadow(
-                    color: AppColors.leafGreen.withOpacity(0.3),
-                    blurRadius: 15,
-                    offset: const Offset(0, 8),
+                    color: const Color(0xFF98FB98).withOpacity(0.4),
+                    blurRadius: 8,
+                    offset: const Offset(0, 4),
                   ),
                 ],
               ),
             ),
           ),
         ),
-
-        // Floating element 3
         Positioned(
-          bottom: 350,
-          left: 100,
+          top: 280,
+          left: 80,
           child: SlideTransition(
             position: _panelSlideAnimation,
             child: Container(
-              width: 80,
-              height: 80,
+              width: 70,
+              height: 70,
               decoration: BoxDecoration(
-                color: AppColors.softPink.withOpacity(0.3),
-                borderRadius: BorderRadius.circular(40),
+                color: const Color(0xFF87CEEB), // Sky blue
+                borderRadius: BorderRadius.circular(35),
                 boxShadow: [
                   BoxShadow(
-                    color: AppColors.softPink.withOpacity(0.2),
-                    blurRadius: 25,
-                    offset: const Offset(0, 12),
+                    color: const Color(0xFF87CEEB).withOpacity(0.4),
+                    blurRadius: 8,
+                    offset: const Offset(0, 4),
                   ),
                 ],
               ),
@@ -439,7 +397,6 @@ class _ARDetailPageState extends State<ARDetailPage>
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisSize: MainAxisSize.min,
             children: [
-              // Handle bar
               Center(
                 child: Container(
                   margin: const EdgeInsets.only(top: 16, bottom: 24),
@@ -451,35 +408,23 @@ class _ARDetailPageState extends State<ARDetailPage>
                   ),
                 ),
               ),
-
-              // A. BARU: Header Aplikasi dengan Ikon + Judul & Kategori
               Padding(
                 padding: const EdgeInsets.symmetric(
                   horizontal: _horizontalPadding,
                 ),
                 child: _buildAppHeaderWithIcon(context, content),
               ),
-
               const SizedBox(height: 40),
-
-              // B. STABILITAS: Seksi Galeri dengan Fixed Height & Padding untuk Shadow
               _buildStableGallerySection(),
-
               const SizedBox(height: 40),
-
-              // C. Seksi Deskripsi dengan alignment presisi
               _buildAboutSection(context, content),
-
               const SizedBox(height: 48),
-
-              // D. Tombol Aksi dengan padding konsisten
               Padding(
                 padding: const EdgeInsets.symmetric(
                   horizontal: _horizontalPadding,
                 ),
-                child: _buildNeomorphicActionButton(context, content),
+                child: _buildActionButton(context, content),
               ),
-
               const SizedBox(height: 40),
             ],
           ),
@@ -488,29 +433,27 @@ class _ARDetailPageState extends State<ARDetailPage>
     );
   }
 
-  // A. BARU: Header Aplikasi dengan Ikon + Judul & Kategori
   Widget _buildAppHeaderWithIcon(BuildContext context, ARContent content) {
     return Row(
       children: [
-        // Ikon Aplikasi di sisi kiri
         Container(
           width: 80,
           height: 80,
           decoration: BoxDecoration(
-            color: Colors.grey.shade100,
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                const Color(0xFF6A5ACD).withOpacity(0.8),
+                const Color(0xFF87CEEB).withOpacity(0.8),
+              ],
+            ),
             borderRadius: BorderRadius.circular(20),
             boxShadow: [
               BoxShadow(
-                color: Colors.grey.shade400,
-                offset: const Offset(4, 4),
-                blurRadius: 8,
-                spreadRadius: 0,
-              ),
-              BoxShadow(
-                color: Colors.white,
-                offset: const Offset(-4, -4),
-                blurRadius: 8,
-                spreadRadius: 0,
+                color: const Color(0xFF6A5ACD).withOpacity(0.3),
+                blurRadius: 12,
+                offset: const Offset(0, 6),
               ),
             ],
           ),
@@ -518,47 +461,49 @@ class _ARDetailPageState extends State<ARDetailPage>
             child: Icon(
               _getIconForContent(content.title),
               size: 40,
-              color: AppColors.primary,
+              color: Colors.white,
             ),
           ),
         ),
-
-        const SizedBox(width: 20), // Spasi antara ikon dan teks
-        // Blok Teks (Judul & Kategori) dengan alignment vertikal di tengah
+        const SizedBox(width: 20),
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisAlignment: MainAxisAlignment.center, // Alignment vertikal
+            mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              // Judul Game
               Text(
                 content.title,
                 style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                   color: AppColors.textPrimary,
                   fontWeight: FontWeight.bold,
-                  fontSize: 28, // Sedikit diperkecil karena ada ikon
+                  fontSize: 28,
                 ),
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
               ),
-
               const SizedBox(height: 8),
-
-              // Kategori Game
               Container(
                 padding: const EdgeInsets.symmetric(
                   horizontal: 16,
                   vertical: 8,
                 ),
                 decoration: BoxDecoration(
-                  color: Colors.orange.shade50,
+                  gradient: LinearGradient(
+                    colors: [
+                      const Color(0xFFFFE4E1),
+                      const Color(0xFFFFB6C1).withOpacity(0.5),
+                    ],
+                  ),
                   borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: Colors.orange.shade200),
+                  border: Border.all(
+                    color: const Color(0xFFFFB6C1),
+                    width: 1,
+                  ),
                 ),
                 child: Text(
-                  'Edukasi',
+                  'Edukasi AR',
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: Colors.orange.shade700,
+                    color: const Color(0xFF8B4513), // Saddle brown
                     fontWeight: FontWeight.w600,
                   ),
                 ),
@@ -570,12 +515,11 @@ class _ARDetailPageState extends State<ARDetailPage>
     );
   }
 
-  // B. STABILITAS: Seksi Galeri dengan Fixed Height & Padding untuk Shadow
+  // TEMA: Gallery section dengan warna yang ceria
   Widget _buildStableGallerySection() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Judul dengan padding konsisten
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: _horizontalPadding),
           child: Text(
@@ -587,38 +531,32 @@ class _ARDetailPageState extends State<ARDetailPage>
             ),
           ),
         ),
-
         const SizedBox(height: 10),
-
-        // PENTING: Garis Pemisah Oranye Full-width dengan padding konsisten
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: _horizontalPadding),
           child: Container(
             width: double.infinity,
             height: 3,
             decoration: BoxDecoration(
-              color: Colors.orange,
+              gradient: const LinearGradient(
+                colors: [
+                  Color(0xFF6A5ACD),
+                  Color(0xFF87CEEB),
+                ],
+              ),
               borderRadius: BorderRadius.circular(2),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.orange.withOpacity(0.4),
-                  blurRadius: 6,
-                  offset: const Offset(0, 2),
-                ),
-              ],
             ),
           ),
         ),
-
         const SizedBox(height: 24),
-
-        // PERBAIKAN SHADOW: Container dengan tinggi yang lebih besar untuk shadow
-        SizedBox(
-          height: _carouselFixedHeight + 40, // TAMBAH 40px untuk ruang shadow
+        Container(
+          width: double.infinity,
+          height: _carouselFixedHeight + 40,
+          clipBehavior: Clip.none,
           child: PageView.builder(
             controller: _imageController,
-            // PERBAIKAN: Tambahkan clipBehavior untuk shadow tidak terpotong
             clipBehavior: Clip.none,
+            pageSnapping: true,
             onPageChanged: (index) {
               setState(() {
                 _currentImageIndex = index;
@@ -626,43 +564,31 @@ class _ARDetailPageState extends State<ARDetailPage>
             },
             itemCount: _carouselImages.length,
             itemBuilder: (context, index) {
-              return Container(
-                // PERBAIKAN: Padding yang cukup untuk shadow di semua sisi
+              return Padding(
                 padding: const EdgeInsets.only(
                   left: _horizontalPadding,
                   right: _horizontalPadding,
-                  top: 20, // Ruang atas untuk shadow
-                  bottom: 20, // Ruang bawah untuk shadow
+                  top: 20,
+                  bottom: 20,
                 ),
                 child: Container(
-                  height: _carouselImageHeight,
+                  width: double.infinity,
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(24),
                     gradient: LinearGradient(
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
                       colors: [
-                        AppColors.primary.withOpacity(0.4),
-                        AppColors.skyBlue.withOpacity(0.4),
-                        AppColors.leafGreen.withOpacity(0.2),
+                        const Color(0xFF6A5ACD).withOpacity(0.7),
+                        const Color(0xFF87CEEB).withOpacity(0.7),
+                        const Color(0xFF98FB98).withOpacity(0.5),
                       ],
                     ),
-                    // PERBAIKAN: Shadow yang lebih terlihat dan tidak terpotong
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withOpacity(0.15),
-                        blurRadius:
-                            20, // Diperbesar untuk shadow yang lebih soft
+                        color: const Color(0xFF6A5ACD).withOpacity(0.3),
+                        blurRadius: 15,
                         offset: const Offset(0, 8),
-                        spreadRadius:
-                            2, // Tambah spread untuk shadow yang lebih luas
-                      ),
-                      // TAMBAHAN: Shadow kedua untuk depth effect
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.08),
-                        blurRadius: 40,
-                        offset: const Offset(0, 16),
-                        spreadRadius: 4,
                       ),
                     ],
                   ),
@@ -680,6 +606,13 @@ class _ARDetailPageState extends State<ARDetailPage>
                               color: Colors.white,
                               fontWeight: FontWeight.w700,
                               fontSize: 20,
+                              shadows: [
+                                Shadow(
+                                  color: Colors.black26,
+                                  offset: Offset(1, 1),
+                                  blurRadius: 3,
+                                ),
+                              ],
                             ),
                           ),
                         ],
@@ -691,11 +624,7 @@ class _ARDetailPageState extends State<ARDetailPage>
             },
           ),
         ),
-
-        const SizedBox(
-          height: 8,
-        ), // KURANGI spacing karena sudah ada padding di atas
-        // Dots indicator dengan padding konsisten
+        const SizedBox(height: 8),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: _horizontalPadding),
           child: Row(
@@ -709,20 +638,26 @@ class _ARDetailPageState extends State<ARDetailPage>
                 margin: const EdgeInsets.symmetric(horizontal: 6),
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color:
-                      _currentImageIndex == index
-                          ? Colors.orange
-                          : Colors.grey.shade300,
-                  boxShadow:
-                      _currentImageIndex == index
-                          ? [
-                            BoxShadow(
-                              color: Colors.orange.withOpacity(0.4),
-                              blurRadius: 10,
-                              offset: const Offset(0, 3),
-                            ),
-                          ]
-                          : null,
+                  gradient: _currentImageIndex == index
+                      ? const LinearGradient(
+                          colors: [
+                            Color(0xFF6A5ACD),
+                            Color(0xFF87CEEB),
+                          ],
+                        )
+                      : null,
+                  color: _currentImageIndex == index
+                      ? null
+                      : Colors.grey.shade300,
+                  boxShadow: _currentImageIndex == index
+                      ? [
+                          BoxShadow(
+                            color: const Color(0xFF6A5ACD).withOpacity(0.4),
+                            blurRadius: 8,
+                            offset: const Offset(0, 2),
+                          ),
+                        ]
+                      : null,
                 ),
               ),
             ),
@@ -732,12 +667,10 @@ class _ARDetailPageState extends State<ARDetailPage>
     );
   }
 
-  // C. PRESISI: Seksi Deskripsi dengan alignment yang sempurna
   Widget _buildAboutSection(BuildContext context, ARContent content) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Judul dengan padding konsisten
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: _horizontalPadding),
           child: Text(
@@ -749,32 +682,24 @@ class _ARDetailPageState extends State<ARDetailPage>
             ),
           ),
         ),
-
         const SizedBox(height: 10),
-
-        // PENTING: Garis Pemisah Oranye Full-width dengan padding konsisten
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: _horizontalPadding),
           child: Container(
             width: double.infinity,
             height: 3,
             decoration: BoxDecoration(
-              color: Colors.orange,
+              gradient: const LinearGradient(
+                colors: [
+                  Color(0xFF6A5ACD),
+                  Color(0xFF87CEEB),
+                ],
+              ),
               borderRadius: BorderRadius.circular(2),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.orange.withOpacity(0.4),
-                  blurRadius: 6,
-                  offset: const Offset(0, 2),
-                ),
-              ],
             ),
           ),
         ),
-
         const SizedBox(height: 20),
-
-        // Teks deskripsi dengan padding konsisten dan hierarki font
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: _horizontalPadding),
           child: Column(
@@ -785,19 +710,17 @@ class _ARDetailPageState extends State<ARDetailPage>
                 style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                   height: 1.6,
                   color: AppColors.textSecondary,
-                  fontSize: 14, // Font lebih kecil dari judul untuk hierarki
+                  fontSize: 16,
                   fontWeight: FontWeight.w400,
                 ),
               ),
-
               const SizedBox(height: 16),
-
               Text(
                 'Game AR interaktif ini menggunakan teknologi Augmented Reality untuk memberikan pengalaman belajar yang menyenangkan dan mendidik untuk anak-anak.',
                 style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                   height: 1.6,
                   color: AppColors.textSecondary,
-                  fontSize: 14, // Font lebih kecil dari judul untuk hierarki
+                  fontSize: 16,
                   fontWeight: FontWeight.w400,
                 ),
               ),
@@ -808,8 +731,8 @@ class _ARDetailPageState extends State<ARDetailPage>
     );
   }
 
-  // D. WAJIB: Tombol pemicu alur pop-up dengan debugging
-  Widget _buildNeomorphicActionButton(BuildContext context, ARContent content) {
+  // TEMA: Button dengan gradient yang menarik
+  Widget _buildActionButton(BuildContext context, ARContent content) {
     return Consumer<ARContentProvider>(
       builder: (context, provider, child) {
         String buttonText;
@@ -820,9 +743,7 @@ class _ARDetailPageState extends State<ARDetailPage>
           case AppConstants.statusNotDownloaded:
             buttonText = 'Mainkan Sekarang';
             buttonIcon = Icons.play_arrow;
-            // WAJIB: Pemicu alur pop-up dengan debugging
             onPressed = () {
-              debugPrint('Button pressed - showing popup');
               _showBookConfirmationPopup(context, content);
             };
             break;
@@ -835,95 +756,152 @@ class _ARDetailPageState extends State<ARDetailPage>
           case AppConstants.statusReady:
             buttonText = 'Mainkan Sekarang!';
             buttonIcon = Icons.play_arrow;
-            onPressed = () => _openARViewer(context, content.id);
+            onPressed = () {
+              _showBookConfirmationPopup(context, content);
+            };
             break;
           default:
-            buttonText = 'Tidak Tersedia';
-            buttonIcon = Icons.error;
-            onPressed = null;
+            buttonText = 'Mainkan Sekarang';
+            buttonIcon = Icons.play_arrow;
+            onPressed = () {
+              _showBookConfirmationPopup(context, content);
+            };
         }
 
-        return _NeomorphicButton(
+        return Container(
           width: double.infinity,
           height: 64,
-          onPressed: onPressed,
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              if (content.status == AppConstants.statusDownloading) ...[
-                const SizedBox(
-                  width: 24,
-                  height: 24,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2.5,
-                    valueColor: AlwaysStoppedAnimation<Color>(Colors.black54),
+          decoration: BoxDecoration(
+            gradient: onPressed != null
+                ? const LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [
+                      Color(0xFF6A5ACD),
+                      Color(0xFF87CEEB),
+                      Color(0xFF98FB98),
+                    ],
+                  )
+                : LinearGradient(
+                    colors: [
+                      Colors.grey.shade300,
+                      Colors.grey.shade400,
+                    ],
                   ),
-                ),
-                const SizedBox(width: 16),
-              ] else ...[
-                Icon(buttonIcon, color: Colors.black54, size: 28),
-                const SizedBox(width: 16),
-              ],
-              Text(
-                buttonText,
-                style: const TextStyle(
-                  color: Colors.black54,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 18,
-                ),
+            borderRadius: BorderRadius.circular(32),
+            boxShadow: onPressed != null
+                ? [
+                    BoxShadow(
+                      color: const Color(0xFF6A5ACD).withOpacity(0.4),
+                      blurRadius: 15,
+                      offset: const Offset(0, 8),
+                    ),
+                  ]
+                : null,
+          ),
+          child: Material(
+            color: Colors.transparent,
+            child: InkWell(
+              borderRadius: BorderRadius.circular(32),
+              onTap: onPressed,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  if (content.status == AppConstants.statusDownloading) ...[
+                    const SizedBox(
+                      width: 24,
+                      height: 24,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2.5,
+                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                  ] else ...[
+                    Icon(
+                      buttonIcon,
+                      color: Colors.white,
+                      size: 28,
+                    ),
+                    const SizedBox(width: 16),
+                  ],
+                  Text(
+                    buttonText,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 18,
+                      shadows: [
+                        Shadow(
+                          color: Colors.black26,
+                          offset: Offset(1, 1),
+                          blurRadius: 3,
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
               ),
-            ],
+            ),
           ),
         );
       },
     );
   }
 
-  // WAJIB: Alur Pop-up Buku (Langkah 1) dengan perbaikan
   void _showBookConfirmationPopup(BuildContext context, ARContent content) {
-    debugPrint('Showing book confirmation popup');
-
     if (!mounted) return;
 
-    showDialog(
-      context: context,
-      barrierDismissible: true,
-      barrierColor: Colors.black54,
-      builder: (BuildContext dialogContext) {
-        return _BookConfirmationPopup(
-          onHaveBook: () {
-            debugPrint('User has book - starting download');
-            Navigator.pop(dialogContext);
-            if (mounted) {
-              context.read<ARContentProvider>().downloadContent(content.id);
-            }
-          },
-          onNeedBook: () {
-            debugPrint('User needs book - showing marketplace');
-            Navigator.pop(dialogContext);
-            if (mounted) {
-              _showMarketplacePopup(context);
-            }
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        showDialog(
+          context: context,
+          barrierDismissible: true,
+          barrierColor: Colors.black54,
+          builder: (BuildContext dialogContext) {
+            return _BookConfirmationPopup(
+              onHaveBook: () {
+                Navigator.pop(dialogContext);
+                if (mounted) {
+                  if (content.status == AppConstants.statusReady) {
+                    _openARViewer(context, content.id);
+                  } else {
+                    context.read<ARContentProvider>().downloadContent(
+                      content.id,
+                    );
+                  }
+                }
+              },
+              onNeedBook: () {
+                Navigator.pop(dialogContext);
+                if (mounted) {
+                  _showMarketplacePopup(context);
+                }
+              },
+            );
           },
         );
-      },
-    );
+      }
+    });
   }
 
-  // WAJIB: Alur Pop-up Marketplace (Langkah 2) dengan perbaikan
   void _showMarketplacePopup(BuildContext context) {
-    debugPrint('Showing marketplace popup');
-
     if (!mounted) return;
 
-    showDialog(
-      context: context,
-      barrierDismissible: true,
-      barrierColor: Colors.black54,
-      builder:
-          (BuildContext dialogContext) =>
-              _MarketplacePopup(onClose: () => Navigator.pop(dialogContext)),
-    );
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        showDialog(
+          context: context,
+          barrierDismissible: true,
+          barrierColor: Colors.black54,
+          builder: (BuildContext dialogContext) {
+            return _MarketplacePopup(
+              onClose: () => Navigator.pop(dialogContext),
+            );
+          },
+        );
+      }
+    });
   }
 
   Widget _buildErrorView() {
@@ -949,21 +927,42 @@ class _ARDetailPageState extends State<ARDetailPage>
               ),
             ),
             const SizedBox(height: 16),
-            _NeomorphicButton(
-              onPressed: () => Navigator.pop(context),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: const [
-                  Icon(Icons.arrow_back, color: Colors.black54),
-                  SizedBox(width: 8),
-                  Text(
-                    'Kembali',
-                    style: TextStyle(
-                      color: Colors.black54,
-                      fontWeight: FontWeight.bold,
+            Container(
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(
+                  colors: [
+                    Color(0xFF6A5ACD),
+                    Color(0xFF87CEEB),
+                  ],
+                ),
+                borderRadius: BorderRadius.circular(25),
+              ),
+              child: Material(
+                color: Colors.transparent,
+                child: InkWell(
+                  borderRadius: BorderRadius.circular(25),
+                  onTap: () => Navigator.pop(context),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 24,
+                      vertical: 12,
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: const [
+                        Icon(Icons.arrow_back, color: Colors.white),
+                        SizedBox(width: 8),
+                        Text(
+                          'Kembali',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
-                ],
+                ),
               ),
             ),
           ],
@@ -993,99 +992,7 @@ class _ARDetailPageState extends State<ARDetailPage>
   }
 }
 
-// Enhanced Neomorphic Button Widget
-class _NeomorphicButton extends StatefulWidget {
-  final Widget child;
-  final VoidCallback? onPressed;
-  final double? width;
-  final double? height;
-  final double size;
-
-  const _NeomorphicButton({
-    required this.child,
-    this.onPressed,
-    this.width,
-    this.height,
-    this.size = 48,
-  });
-
-  @override
-  State<_NeomorphicButton> createState() => _NeomorphicButtonState();
-}
-
-class _NeomorphicButtonState extends State<_NeomorphicButton> {
-  bool _isPressed = false;
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTapDown:
-          widget.onPressed != null
-              ? (_) => setState(() => _isPressed = true)
-              : null,
-      onTapUp:
-          widget.onPressed != null
-              ? (_) => setState(() => _isPressed = false)
-              : null,
-      onTapCancel:
-          widget.onPressed != null
-              ? () => setState(() => _isPressed = false)
-              : null,
-      onTap: () {
-        if (widget.onPressed != null) {
-          debugPrint('NeomorphicButton tapped');
-          widget.onPressed!();
-        }
-      },
-      child: AnimatedScale(
-        scale: _isPressed ? 0.95 : 1.0,
-        duration: const Duration(milliseconds: 100),
-        curve: Curves.easeInOut,
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 150),
-          width: widget.width ?? widget.size,
-          height: widget.height ?? widget.size,
-          decoration: BoxDecoration(
-            color: _isPressed ? Colors.grey.shade200 : Colors.grey.shade100,
-            borderRadius: BorderRadius.circular(
-              widget.width != null ? 20 : widget.size / 2,
-            ),
-            boxShadow:
-                _isPressed
-                    ? [
-                      BoxShadow(
-                        color: Colors.grey.shade400,
-                        offset: const Offset(2, 2),
-                        blurRadius: 4,
-                        spreadRadius: -1,
-                      ),
-                    ]
-                    : [
-                      BoxShadow(
-                        color: Colors.grey.shade400,
-                        offset: const Offset(4, 4),
-                        blurRadius: 8,
-                        spreadRadius: 0,
-                      ),
-                      BoxShadow(
-                        color: Colors.white,
-                        offset: const Offset(-4, -4),
-                        blurRadius: 8,
-                        spreadRadius: 0,
-                      ),
-                    ],
-          ),
-          child:
-              widget.onPressed != null
-                  ? Center(child: widget.child)
-                  : Opacity(opacity: 0.5, child: Center(child: widget.child)),
-        ),
-      ),
-    );
-  }
-}
-
-// WAJIB: Enhanced Book Confirmation Popup (Langkah 1)
+// POPUP CLASSES - Dengan tema yang konsisten
 class _BookConfirmationPopup extends StatelessWidget {
   final VoidCallback onHaveBook;
   final VoidCallback onNeedBook;
@@ -1103,28 +1010,46 @@ class _BookConfirmationPopup extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(28),
         decoration: BoxDecoration(
-          color: Colors.grey.shade100,
+          color: Colors.white,
           borderRadius: BorderRadius.circular(24),
           boxShadow: [
             BoxShadow(
-              color: Colors.grey.shade400,
-              offset: const Offset(6, 6),
-              blurRadius: 12,
-            ),
-            BoxShadow(
-              color: Colors.white,
-              offset: const Offset(-6, -6),
-              blurRadius: 12,
+              color: const Color(0xFF6A5ACD).withOpacity(0.3),
+              blurRadius: 20,
+              offset: const Offset(0, 10),
             ),
           ],
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(
-              Icons.menu_book_rounded,
-              size: 56,
-              color: Colors.orange.shade600,
+            Container(
+              width: 80,
+              height: 80,
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(
+                  colors: [
+                    Color(0xFF6A5ACD),
+                    Color(0xFF87CEEB),
+                  ],
+                ),
+                borderRadius: BorderRadius.circular(40),
+              ),
+              child: const Icon(
+                Icons.menu_book_rounded,
+                size: 40,
+                color: Colors.white,
+              ),
+            ),
+            const SizedBox(height: 20),
+            Text(
+              'Untuk bermain game AR ini, Anda memerlukan buku fisik sebagai marker.',
+              style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                color: Colors.black87,
+                fontSize: 16,
+                height: 1.4,
+              ),
+              textAlign: TextAlign.center,
             ),
             const SizedBox(height: 20),
             Text(
@@ -1140,38 +1065,18 @@ class _BookConfirmationPopup extends StatelessWidget {
             Row(
               children: [
                 Expanded(
-                  child: _NeomorphicButton(
-                    height: 52,
-                    onPressed: () {
-                      debugPrint('Ya button pressed');
-                      onHaveBook();
-                    },
-                    child: const Text(
-                      'Ya',
-                      style: TextStyle(
-                        color: Colors.black54,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 17,
-                      ),
-                    ),
+                  child: _ThemedButton(
+                    onPressed: onHaveBook,
+                    text: 'Ya, Saya Punya',
+                    isPrimary: true,
                   ),
                 ),
-                const SizedBox(width: 20),
+                const SizedBox(width: 16),
                 Expanded(
-                  child: _NeomorphicButton(
-                    height: 52,
-                    onPressed: () {
-                      debugPrint('Belum button pressed');
-                      onNeedBook();
-                    },
-                    child: const Text(
-                      'Belum',
-                      style: TextStyle(
-                        color: Colors.black54,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 17,
-                      ),
-                    ),
+                  child: _ThemedButton(
+                    onPressed: onNeedBook,
+                    text: 'Belum Punya',
+                    isPrimary: false,
                   ),
                 ),
               ],
@@ -1183,7 +1088,6 @@ class _BookConfirmationPopup extends StatelessWidget {
   }
 }
 
-// WAJIB: Enhanced Marketplace Popup (Langkah 2)
 class _MarketplacePopup extends StatelessWidget {
   final VoidCallback onClose;
 
@@ -1197,28 +1101,36 @@ class _MarketplacePopup extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(28),
         decoration: BoxDecoration(
-          color: Colors.grey.shade100,
+          color: Colors.white,
           borderRadius: BorderRadius.circular(24),
           boxShadow: [
             BoxShadow(
-              color: Colors.grey.shade400,
-              offset: const Offset(6, 6),
-              blurRadius: 12,
-            ),
-            BoxShadow(
-              color: Colors.white,
-              offset: const Offset(-6, -6),
-              blurRadius: 12,
+              color: const Color(0xFF6A5ACD).withOpacity(0.3),
+              blurRadius: 20,
+              offset: const Offset(0, 10),
             ),
           ],
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(
-              Icons.shopping_cart_rounded,
-              size: 56,
-              color: Colors.blue.shade600,
+            Container(
+              width: 80,
+              height: 80,
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(
+                  colors: [
+                    Color(0xFF6A5ACD),
+                    Color(0xFF87CEEB),
+                  ],
+                ),
+                borderRadius: BorderRadius.circular(40),
+              ),
+              child: const Icon(
+                Icons.shopping_cart_rounded,
+                size: 40,
+                color: Colors.white,
+              ),
             ),
             const SizedBox(height: 20),
             Text(
@@ -1231,79 +1143,110 @@ class _MarketplacePopup extends StatelessWidget {
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 28),
-            _NeomorphicButton(
-              width: double.infinity,
-              height: 52,
-              onPressed: () {
-                debugPrint('Tokopedia button pressed');
-                onClose();
-              },
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    Icons.shopping_bag,
-                    color: Colors.green.shade600,
-                    size: 22,
-                  ),
-                  const SizedBox(width: 10),
-                  const Text(
-                    'Beli di Tokopedia',
-                    style: TextStyle(
-                      color: Colors.black54,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 17,
-                    ),
-                  ),
-                ],
-              ),
+            _ThemedButton(
+              onPressed: onClose,
+              text: 'Beli di Tokopedia',
+              icon: Icons.shopping_bag,
+              isPrimary: true,
+              fullWidth: true,
             ),
             const SizedBox(height: 18),
-            _NeomorphicButton(
-              width: double.infinity,
-              height: 52,
-              onPressed: () {
-                debugPrint('Shopee button pressed');
-                onClose();
-              },
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    Icons.shopping_cart,
-                    color: Colors.orange.shade600,
-                    size: 22,
-                  ),
-                  const SizedBox(width: 10),
-                  const Text(
-                    'Beli di Shopee',
-                    style: TextStyle(
-                      color: Colors.black54,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 17,
-                    ),
-                  ),
-                ],
-              ),
+            _ThemedButton(
+              onPressed: onClose,
+              text: 'Beli di Shopee',
+              icon: Icons.shopping_cart,
+              isPrimary: true,
+              fullWidth: true,
             ),
             const SizedBox(height: 18),
-            _NeomorphicButton(
-              width: double.infinity,
-              height: 48,
-              onPressed: () {
-                debugPrint('Tutup button pressed');
-                onClose();
-              },
-              child: const Text(
-                'Tutup',
-                style: TextStyle(
-                  color: Colors.black54,
-                  fontWeight: FontWeight.w500,
-                  fontSize: 16,
-                ),
-              ),
+            _ThemedButton(
+              onPressed: onClose,
+              text: 'Tutup',
+              isPrimary: false,
+              fullWidth: true,
             ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+// Themed Button component untuk konsistensi
+class _ThemedButton extends StatelessWidget {
+  final VoidCallback onPressed;
+  final String text;
+  final IconData? icon;
+  final bool isPrimary;
+  final bool fullWidth;
+
+  const _ThemedButton({
+    required this.onPressed,
+    required this.text,
+    this.icon,
+    required this.isPrimary,
+    this.fullWidth = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: fullWidth ? double.infinity : null,
+      height: 52,
+      decoration: BoxDecoration(
+        gradient: isPrimary
+            ? const LinearGradient(
+                colors: [
+                  Color(0xFF6A5ACD),
+                  Color(0xFF87CEEB),
+                ],
+              )
+            : null,
+        color: isPrimary ? null : Colors.grey.shade100,
+        borderRadius: BorderRadius.circular(26),
+        border: isPrimary
+            ? null
+            : Border.all(
+                color: Colors.grey.shade300,
+                width: 1,
+              ),
+        boxShadow: isPrimary
+            ? [
+                BoxShadow(
+                  color: const Color(0xFF6A5ACD).withOpacity(0.3),
+                  blurRadius: 8,
+                  offset: const Offset(0, 4),
+                ),
+              ]
+            : null,
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(26),
+          onTap: onPressed,
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              if (icon != null) ...[
+                Icon(
+                  icon,
+                  color: isPrimary ? Colors.white : Colors.grey.shade600,
+                  size: 20,
+                ),
+                const SizedBox(width: 8),
+              ],
+              Text(
+                text,
+                style: TextStyle(
+                  color: isPrimary ? Colors.white : Colors.grey.shade700,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 16,
+                ),
+                textAlign: TextAlign.center,
+              ),
+            ],
+          ),
         ),
       ),
     );
