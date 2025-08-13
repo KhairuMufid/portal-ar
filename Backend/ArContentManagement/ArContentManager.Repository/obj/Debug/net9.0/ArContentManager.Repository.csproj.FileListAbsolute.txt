@@ -1,0 +1,16 @@
+C:\Users\alfar\Documents\GitHub\portal-ar\Backend\ArContentManagement\ArContentManager.Repository\bin\Debug\net9.0\ArContentManager.Repository.deps.json
+C:\Users\alfar\Documents\GitHub\portal-ar\Backend\ArContentManagement\ArContentManager.Repository\bin\Debug\net9.0\ArContentManager.Repository.dll
+C:\Users\alfar\Documents\GitHub\portal-ar\Backend\ArContentManagement\ArContentManager.Repository\bin\Debug\net9.0\ArContentManager.Repository.pdb
+C:\Users\alfar\Documents\GitHub\portal-ar\Backend\ArContentManagement\ArContentManager.Repository\bin\Debug\net9.0\ArContentManager.Models.dll
+C:\Users\alfar\Documents\GitHub\portal-ar\Backend\ArContentManagement\ArContentManager.Repository\bin\Debug\net9.0\ArContentManager.Models.pdb
+C:\Users\alfar\Documents\GitHub\portal-ar\Backend\ArContentManagement\ArContentManager.Repository\obj\Debug\net9.0\ArContentManager.Repository.csproj.AssemblyReference.cache
+C:\Users\alfar\Documents\GitHub\portal-ar\Backend\ArContentManagement\ArContentManager.Repository\obj\Debug\net9.0\ArContentManager.Repository.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\alfar\Documents\GitHub\portal-ar\Backend\ArContentManagement\ArContentManager.Repository\obj\Debug\net9.0\ArContentManager.Repository.AssemblyInfoInputs.cache
+C:\Users\alfar\Documents\GitHub\portal-ar\Backend\ArContentManagement\ArContentManager.Repository\obj\Debug\net9.0\ArContentManager.Repository.AssemblyInfo.cs
+C:\Users\alfar\Documents\GitHub\portal-ar\Backend\ArContentManagement\ArContentManager.Repository\obj\Debug\net9.0\ArContentManager.Repository.csproj.CoreCompileInputs.cache
+C:\Users\alfar\Documents\GitHub\portal-ar\Backend\ArContentManagement\ArContentManager.Repository\obj\Debug\net9.0\ArContentManager.Repository.sourcelink.json
+C:\Users\alfar\Documents\GitHub\portal-ar\Backend\ArContentManagement\ArContentManager.Repository\obj\Debug\net9.0\ArConten.6E522375.Up2Date
+C:\Users\alfar\Documents\GitHub\portal-ar\Backend\ArContentManagement\ArContentManager.Repository\obj\Debug\net9.0\ArContentManager.Repository.dll
+C:\Users\alfar\Documents\GitHub\portal-ar\Backend\ArContentManagement\ArContentManager.Repository\obj\Debug\net9.0\refint\ArContentManager.Repository.dll
+C:\Users\alfar\Documents\GitHub\portal-ar\Backend\ArContentManagement\ArContentManager.Repository\obj\Debug\net9.0\ArContentManager.Repository.pdb
+C:\Users\alfar\Documents\GitHub\portal-ar\Backend\ArContentManagement\ArContentManager.Repository\obj\Debug\net9.0\ref\ArContentManager.Repository.dll

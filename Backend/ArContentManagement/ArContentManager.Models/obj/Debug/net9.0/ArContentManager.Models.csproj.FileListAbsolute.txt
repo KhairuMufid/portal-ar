@@ -1,0 +1,13 @@
+C:\Users\alfar\Documents\GitHub\portal-ar\Backend\ArContentManagement\ArContentManager.Models\bin\Debug\net9.0\ArContentManager.Models.deps.json
+C:\Users\alfar\Documents\GitHub\portal-ar\Backend\ArContentManagement\ArContentManager.Models\bin\Debug\net9.0\ArContentManager.Models.dll
+C:\Users\alfar\Documents\GitHub\portal-ar\Backend\ArContentManagement\ArContentManager.Models\bin\Debug\net9.0\ArContentManager.Models.pdb
+C:\Users\alfar\Documents\GitHub\portal-ar\Backend\ArContentManagement\ArContentManager.Models\obj\Debug\net9.0\ArContentManager.Models.csproj.AssemblyReference.cache
+C:\Users\alfar\Documents\GitHub\portal-ar\Backend\ArContentManagement\ArContentManager.Models\obj\Debug\net9.0\ArContentManager.Models.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\alfar\Documents\GitHub\portal-ar\Backend\ArContentManagement\ArContentManager.Models\obj\Debug\net9.0\ArContentManager.Models.AssemblyInfoInputs.cache
+C:\Users\alfar\Documents\GitHub\portal-ar\Backend\ArContentManagement\ArContentManager.Models\obj\Debug\net9.0\ArContentManager.Models.AssemblyInfo.cs
+C:\Users\alfar\Documents\GitHub\portal-ar\Backend\ArContentManagement\ArContentManager.Models\obj\Debug\net9.0\ArContentManager.Models.csproj.CoreCompileInputs.cache
+C:\Users\alfar\Documents\GitHub\portal-ar\Backend\ArContentManagement\ArContentManager.Models\obj\Debug\net9.0\ArContentManager.Models.sourcelink.json
+C:\Users\alfar\Documents\GitHub\portal-ar\Backend\ArContentManagement\ArContentManager.Models\obj\Debug\net9.0\ArContentManager.Models.dll
+C:\Users\alfar\Documents\GitHub\portal-ar\Backend\ArContentManagement\ArContentManager.Models\obj\Debug\net9.0\refint\ArContentManager.Models.dll
+C:\Users\alfar\Documents\GitHub\portal-ar\Backend\ArContentManagement\ArContentManager.Models\obj\Debug\net9.0\ArContentManager.Models.pdb
+C:\Users\alfar\Documents\GitHub\portal-ar\Backend\ArContentManagement\ArContentManager.Models\obj\Debug\net9.0\ref\ArContentManager.Models.dll
