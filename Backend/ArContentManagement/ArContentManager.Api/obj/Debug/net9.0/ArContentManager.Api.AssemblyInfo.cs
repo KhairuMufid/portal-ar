@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("ArContentManager.Api")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+50393f39a44b11e976f1ae20bc3a2127fb1673d2")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+b5ffd3a7062b66b632118edce42d7f8ac0f9b128")]
 [assembly: System.Reflection.AssemblyProductAttribute("ArContentManager.Api")]
 [assembly: System.Reflection.AssemblyTitleAttribute("ArContentManager.Api")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
